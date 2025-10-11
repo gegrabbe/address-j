@@ -516,6 +516,21 @@ function sortEntriesByLastName() {
     });
 }
 
+// Export entries to file
+function exportEntries() {
+    $.ajax({
+        url: `${API_BASE_URL}/export`,
+        method: 'POST',
+        success: function() {
+            showMessage('Entries exported successfully to export-data.json', 'success');
+        },
+        error: function(xhr, status, error) {
+            const errorMsg = getErrorMessage(xhr, 'Error exporting entries: ' + error);
+            showMessage(errorMsg, 'error');
+        }
+    });
+}
+
 $(document).ready(function() {
 
     // Button click handlers
@@ -525,6 +540,10 @@ $(document).ready(function() {
 
     $('#addNewBtn').click(function() {
         showAddForm();
+    });
+
+    $('#exportBtn').click(function() {
+        exportEntries();
     });
 
     $('#cancelAddBtn').click(function() {

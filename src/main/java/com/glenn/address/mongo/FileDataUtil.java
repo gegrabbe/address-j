@@ -31,7 +31,7 @@ public class FileDataUtil {
         try (FileWriter writer = new FileWriter(fileName)) {
             writer.write(json);
             logger.info("Successfully wrote {} entries to input-data.json", entries.size());
-            logger.debug("JSON content: \n{}", json);
+            logger.debug("JSON content: \n{}", StringUtils.substring(json, 0 ,100));
         } catch (IOException e) {
             logger.error("Failed to write JSON to file", e);
         }

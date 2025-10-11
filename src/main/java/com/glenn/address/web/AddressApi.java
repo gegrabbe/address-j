@@ -3,9 +3,11 @@ package com.glenn.address.web;
 import com.glenn.address.domain.CompareById;
 import com.glenn.address.domain.CompareByLastName;
 import com.glenn.address.domain.Entry;
+import com.glenn.address.mongo.FileDataUtil;
 import com.glenn.address.mongo.MongoService;
 import com.mongodb.MongoWriteException;
 import jakarta.annotation.PreDestroy;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,7 @@ import java.util.List;
 public class AddressApi {
     private static final Logger logger = LoggerFactory.getLogger(AddressApi.class);
     public static final String DATABASE_ERROR = "Database Error";
+    public static final String EXPORT_DATA_FILE = "export-data.json";
     private final MongoService mongoService;
 
     public AddressApi() {
@@ -26,11 +29,13 @@ public class AddressApi {
     }
 
     public static List<Entry> sortById(List<Entry> entries) {
-        return entries.stream().sorted(new CompareById()).toList();
+        entries.sort(new CompareById());
+        return entries;
     }
 
     public static List<Entry> sortByLastName(List<Entry> entries) {
-        return entries.stream().sorted(new CompareByLastName()).toList();
+        entries.sort(new CompareByLastName());
+        return entries;
     }
 
     @GetMapping
@@ -50,9 +55,7 @@ public class AddressApi {
     public ResponseEntity<?> getAllEntriesSortedById() {
         logger.debug("#### getAllEntriesSortedById ####");
         try {
-            List<Entry> entries = mongoService.readFromDatabase();
-            List<Entry> sortedEntries = sortById(entries);
-            return ResponseEntity.ok(sortedEntries);
+            return ResponseEntity.ok(sortById(mongoService.readFromDatabase()));
         } catch (Exception e) {
             logger.error("Failed to retrieve and sort entries by ID", e);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
@@ -64,9 +67,7 @@ public class AddressApi {
     public ResponseEntity<?> getAllEntriesSortedByLastName() {
         logger.debug("#### getAllEntriesSortedByLastName ####");
         try {
-            List<Entry> entries = mongoService.readFromDatabase();
-            List<Entry> sortedEntries = sortByLastName(entries);
-            return ResponseEntity.ok(sortedEntries);
+            return ResponseEntity.ok(sortByLastName(mongoService.readFromDatabase()));
         } catch (Exception e) {
             logger.error("Failed to retrieve and sort entries by last name", e);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
@@ -105,7 +106,7 @@ public class AddressApi {
 
     @GetMapping("/search/name/{firstName}/{lastName}")
     public ResponseEntity<?> searchByFirstAndLastName(@PathVariable String firstName,
-                                                                @PathVariable String lastName) {
+                                                      @PathVariable String lastName) {
         logger.debug("#### searchByFirstAndLastName ####");
         try {
             List<Entry> entries = mongoService.searchByFirstAndLastName(firstName, lastName);
@@ -123,6 +124,14 @@ public class AddressApi {
         try {
             mongoService.saveToDatabase(entries);
             return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (MongoWriteException we) {
+            logger.error("Failed to save entry - duplicate key", we);
+            String msg = we.getMessage();
+            if (we.getMessage().contains("duplicate key error")) {
+                msg = "Duplicate Entry ID Exists";
+            }
+            ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, msg);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         } catch (Exception e) {
             logger.error("Failed to create entries", e);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
@@ -137,15 +146,15 @@ public class AddressApi {
             mongoService.saveEntryToDatabase(entry);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (MongoWriteException we) {
-            logger.error("Failed to create entries", we);
+            logger.error("Failed to save entry - duplicate key", we);
             String msg = we.getMessage();
-            if(we.getMessage().contains("duplicate key error")) {
+            if (we.getMessage().contains("duplicate key error")) {
                 msg = "Duplicate Entry ID Exists";
             }
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, msg);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         } catch (Exception e) {
-            logger.error("Failed to create entries", e);
+            logger.error("Failed to save entry - unexpected error", e);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
@@ -159,6 +168,26 @@ public class AddressApi {
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             logger.error("Failed to delete entry by id: {}", entryId, e);
+            ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    @PostMapping("/export")
+    public ResponseEntity<?> export(@RequestParam(required = false) String fileName) {
+        logger.debug("#### export ####");
+        try {
+            if (StringUtils.isEmpty(fileName)) {
+                fileName = EXPORT_DATA_FILE;
+            }
+            if (fileName.startsWith("/")) {
+                ErrorResponse errorResponse = new ErrorResponse("Invalid File Name", "File name cannot begin with /");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            new FileDataUtil(fileName).writeData(sortById(mongoService.readFromDatabase()));
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } catch (Exception e) {
+            logger.error("Failed to export - unexpected error", e);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
