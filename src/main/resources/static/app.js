@@ -512,6 +512,13 @@ function sortEntriesByLastName() {
     });
 }
 
+// Print all entries to PDF
+function printAllEntries() {
+    // Open the PDF in a new window/tab which will trigger download
+    window.open('/api/print', '_blank');
+    showMessage('Generating PDF document...', 'info');
+}
+
 // Export entries to file
 function exportEntries() {
     const fileName = prompt('Enter filename for export:', 'export-data.json');
@@ -617,6 +624,10 @@ $(document).ready(function() {
 
     $('#addNewBtn').click(function() {
         showAddForm();
+    });
+
+    $('#printBtn').click(function() {
+        printAllEntries();
     });
 
     $('#exportBtn').click(function() {
