@@ -329,7 +329,7 @@ function saveEditedEntry() {
                 success: function() {
                     showMessage('Entry updated successfully!', 'success');
                     hideEditForm();
-                    loadAllEntries();
+                    loadAllEntries(false);
                 },
                 error: function(xhr, status, error) {
                     const errorMsg = getErrorMessage(xhr, 'Error saving updated entry: ' + error);
@@ -351,25 +351,21 @@ function showMessage(message, type) {
     messageDiv.removeClass('hidden success error info');
     messageDiv.addClass(type);
     messageText.text(message);
-
-    // Auto-hide after delay for success and info messages only
-    // Error messages stay visible until manually dismissed
-    if (type === 'success' || type === 'info') {
-        setTimeout(function() {
-            messageDiv.addClass('hidden');
-        }, MESSAGE_AUTO_HIDE_DELAY);
-    }
+    // Message stays visible until manually dismissed - no auto-hide
 }
 
 // Load all entries (sorted by ID by default)
-function loadAllEntries() {
+function loadAllEntries(showFoundMessage) {
+    showFoundMessage = showFoundMessage !== false; // default to true
     showLoading();
     $.ajax({
         url: `${API_BASE_URL}/sortById`,
         method: 'GET',
         success: function(data) {
             displayResults(data);
-            showMessage(`Found ${data.length} entries`, 'success');
+            if (showFoundMessage) {
+                showMessage(`Found ${data.length} entries`, 'success');
+            }
         },
         error: function(xhr, status, error) {
             const errorMsg = getErrorMessage(xhr, 'Error loading entries: ' + error);
@@ -452,7 +448,7 @@ function saveEntry(keepOpen) {
             } else {
                 hideAddForm();
                 // Reload all entries to show in results
-                loadAllEntries();
+                loadAllEntries(false);
             }
         },
         error: function(xhr, status, error) {
@@ -471,7 +467,7 @@ function deleteEntryById(entryId) {
             showMessage(`Successfully deleted entries with ID: ${entryId}`, 'success');
             $('#selectedEntryId').val('');
             // Reload all entries to reflect the deletion
-            loadAllEntries();
+            loadAllEntries(false);
         },
         error: function(xhr, status, error) {
             const errorMsg = getErrorMessage(xhr, 'Error deleting entry: ' + error);
@@ -544,6 +540,12 @@ function exportEntries() {
         return;
     }
 
+    // Check if filename ends with .json
+    if (!trimmedFileName.endsWith('.json')) {
+        showMessage('Filename must end with .json', 'error');
+        return;
+    }
+
     $.ajax({
         url: `${API_BASE_URL}/export?fileName=${encodeURIComponent(trimmedFileName)}`,
         method: 'POST',
@@ -585,13 +587,19 @@ function importEntries() {
         return;
     }
 
+    // Check if filename ends with .json
+    if (!trimmedFileName.endsWith('.json')) {
+        showMessage('Filename must end with .json', 'error');
+        return;
+    }
+
     $.ajax({
         url: `${API_BASE_URL}/importData?fileName=${encodeURIComponent(trimmedFileName)}`,
         method: 'POST',
         success: function() {
             showMessage(`Entries imported successfully from ${trimmedFileName}`, 'success');
             // Reload all entries to show the imported data
-            loadAllEntries();
+            loadAllEntries(false);
         },
         error: function(xhr, status, error) {
             const errorMsg = getErrorMessage(xhr, 'Error importing entries: ' + error);
@@ -645,7 +653,9 @@ $(document).ready(function() {
     $(document).on('click', '#messageClose', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        $('#messageSection').addClass('hidden');
+        const messageDiv = $('#messageSection');
+        messageDiv.removeClass('success error info');
+        $('#messageText').text('');
     });
 
     // Entry card click handler - populate selected field

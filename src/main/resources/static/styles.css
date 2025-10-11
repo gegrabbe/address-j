@@ -318,6 +318,9 @@ h3 {
     align-items: center;
     justify-content: space-between;
     position: relative;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    min-height: 51px;
 }
 
 .message.success {

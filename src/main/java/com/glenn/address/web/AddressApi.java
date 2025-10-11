@@ -5,9 +5,9 @@ import com.glenn.address.domain.CompareByLastName;
 import com.glenn.address.domain.Entry;
 import com.glenn.address.mongo.FileDataUtil;
 import com.glenn.address.mongo.MongoService;
+import com.glenn.address.mongo.NextEntryId;
 import com.mongodb.MongoWriteException;
 import jakarta.annotation.PreDestroy;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -15,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -47,8 +46,7 @@ public class AddressApi {
     public ResponseEntity<?> getAllEntries() {
         logger.debug("#### getAllEntries ####");
         try {
-            List<Entry> entries = mongoService.readFromDatabase();
-            return ResponseEntity.ok(entries);
+            return ResponseEntity.ok(mongoService.readFromDatabase());
         } catch (Exception e) {
             logger.error("Failed to retrieve all entries", e);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
@@ -104,8 +102,7 @@ public class AddressApi {
     public ResponseEntity<?> searchByLastName(@PathVariable String lastName) {
         logger.debug("#### searchByLastName ####");
         try {
-            List<Entry> entries = mongoService.searchByLastName(lastName);
-            return ResponseEntity.ok(entries);
+            return ResponseEntity.ok(mongoService.searchByLastName(lastName));
         } catch (Exception e) {
             logger.error("Failed to search by lastName: {}", lastName, e);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
@@ -119,8 +116,7 @@ public class AddressApi {
                                                       @PathVariable String lastName) {
         logger.debug("#### searchByFirstAndLastName ####");
         try {
-            List<Entry> entries = mongoService.searchByFirstAndLastName(firstName, lastName);
-            return ResponseEntity.ok(entries);
+            return ResponseEntity.ok(mongoService.searchByFirstAndLastName(firstName, lastName));
         } catch (Exception e) {
             logger.error("Failed to search by firstName: {} and lastName: {}", firstName, lastName, e);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
@@ -180,12 +176,9 @@ public class AddressApi {
 
     @PostMapping("/export")
     @SuppressWarnings("unused")
-    public ResponseEntity<?> export(@RequestParam(required = false) String fileName) {
+    public ResponseEntity<?> export(@RequestParam(required = false, defaultValue = EXPORT_DATA_FILE) String fileName) {
         logger.debug("#### export ####");
         try {
-            if (StringUtils.isEmpty(fileName)) {
-                fileName = EXPORT_DATA_FILE;
-            }
             ResponseEntity<?> responseEntity = fileNameCheck(fileName, false);
             if (responseEntity != null) {
                 return responseEntity;
@@ -201,26 +194,15 @@ public class AddressApi {
 
     @PostMapping("/importData")
     @SuppressWarnings("unused")
-    public ResponseEntity<?> importData(@RequestParam(required = false) String fileName) {
+    public ResponseEntity<?> importData(@RequestParam(required = false, defaultValue = IMPORT_DATA_FILE) String fileName) {
         logger.debug("#### importData ####");
         try {
-            if (StringUtils.isEmpty(fileName)) {
-                fileName = IMPORT_DATA_FILE;
-            }
             ResponseEntity<?> responseEntity = fileNameCheck(fileName, true);
             if (responseEntity != null) {
                 return responseEntity;
             }
-            List<Integer> oldEntriesIds = sortById(mongoService.readFromDatabase())
-                    .stream().map(Entry::entryId).toList();
-
-            int maxId = 0;
-            if (!oldEntriesIds.isEmpty()) {
-                maxId = oldEntriesIds.getLast();
-            }
-
-            List<Entry> newEntries = fixNewEntryIds(new FileDataUtil(fileName).readData(), maxId);
-            mongoService.saveToDatabase(newEntries);
+            mongoService.saveToDatabase(fixNewEntryIds(new FileDataUtil(fileName).readData(),
+                    new NextEntryId(mongoService)));
             return ResponseEntity.status(HttpStatus.OK).build();
         } catch (MongoWriteException we) {
             String msg = duplicateMsg(we);
@@ -233,28 +215,28 @@ public class AddressApi {
         }
     }
 
-    private List<Entry> fixNewEntryIds(List<Entry> newEntries, Integer maxId) {
-        int index = maxId;
-        List<Entry> fixed = new ArrayList<>();
-        for (Entry entry : newEntries) {
-            index++;
-            fixed.add(new Entry(index, entry.person(), entry.address(), entry.notes()));
-        }
-        return fixed;
+    private List<Entry> fixNewEntryIds(List<Entry> newEntries, NextEntryId nextEntryId) {
+        return newEntries.stream()
+                .map(entry -> new Entry(nextEntryId.next(), entry.person(), entry.address(), entry.notes()))
+                .toList();
     }
 
     private ResponseEntity<?> fileNameCheck(String fileName, boolean mustExist) {
         if (fileName.startsWith("/")) {
-            ErrorResponse errorResponse = new ErrorResponse("Invalid File Name", "File name cannot begin with /");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Invalid File Name", "File name cannot begin with /"));
         }
         if (fileName.contains(":")) {
-            ErrorResponse errorResponse = new ErrorResponse("Invalid File Name", "File name cannot contain :");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Invalid File Name", "File name cannot contain :"));
+        }
+        if (!fileName.endsWith(".json")) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Invalid File Name", "File name must end with .json"));
         }
         if (mustExist && !(new File(fileName).canRead())) {
-            ErrorResponse errorResponse = new ErrorResponse("Invalid File Name", "File does not exist");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Invalid File Name", "File does not exist"));
         }
         return null;
     }
