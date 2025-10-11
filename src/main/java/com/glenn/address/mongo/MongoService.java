@@ -17,6 +17,7 @@ import java.util.List;
 
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.regex;
 
 public class MongoService implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(MongoService.class);
@@ -66,7 +67,7 @@ public class MongoService implements AutoCloseable {
             }
         } catch (MongoException e) {
             logger.error("Failed to save entries to MongoDB", e);
-            throw new RuntimeException("Failed to save entries to MongoDB", e);
+            throw e;
         }
     }
 
@@ -77,8 +78,18 @@ public class MongoService implements AutoCloseable {
             collection.insertOne(doc);
             logger.debug("Successfully saved 1 entry to MongoDB: {}", update.entryId());
         } catch (MongoException e) {
-            logger.error("Failed to save entries to MongoDB", e);
-            throw new RuntimeException("Failed to save entries to MongoDB", e);
+            logger.error("Failed to save entry to MongoDB", e);
+            throw e;
+        }
+    }
+
+    public void deleteEntryById(Integer entryId) {
+        try {
+            var result = collection.deleteMany(eq("entryId", entryId));
+            logger.debug("Successfully deleted {} entries with entryId '{}'", result.getDeletedCount(), entryId);
+        } catch (MongoException e) {
+            logger.error("Failed to delete entries with entryId: {}", entryId, e);
+            throw e;
         }
     }
 
@@ -101,7 +112,7 @@ public class MongoService implements AutoCloseable {
         }
     }
 
-    public List<Entry> searchByEntryId(String entryId) {
+    public List<Entry> searchByEntryId(Integer entryId) {
         try {
             List<Entry> entries = new ArrayList<>();
 
@@ -124,7 +135,7 @@ public class MongoService implements AutoCloseable {
         try {
             List<Entry> entries = new ArrayList<>();
 
-            for (Document doc : collection.find(eq("person.lastName", lastName))) {
+            for (Document doc : collection.find(regex("person.lastName", "^" + lastName, "i"))) {
                 doc.remove("_id");
                 String json = doc.toJson();
                 Entry entry = gson.fromJson(json, Entry.class);
@@ -144,8 +155,8 @@ public class MongoService implements AutoCloseable {
             List<Entry> entries = new ArrayList<>();
 
             for (Document doc : collection.find(and(
-                    eq("person.firstName", firstName),
-                    eq("person.lastName", lastName)))) {
+                    regex("person.firstName", "^" + firstName, "i"),
+                    regex("person.lastName", "^" + lastName, "i")))) {
                 doc.remove("_id");
                 String json = doc.toJson();
                 Entry entry = gson.fromJson(json, Entry.class);
@@ -177,7 +188,7 @@ public class MongoService implements AutoCloseable {
             msTest.saveToDatabase(updates);
             updates = msTest.readFromDatabase();
             logger.info("Read from database: {}", StringUtils.substring(updates.toString(), 0, 100));
-            List<Entry> entries = msTest.searchByEntryId("0");
+            List<Entry> entries = msTest.searchByEntryId(0);
             logger.info("Searched from database: {}", entries
                     .stream()
                     .map(entry -> entry.entryId() + ":" + entry.person().firstName() + ":" + entry.person().lastName())

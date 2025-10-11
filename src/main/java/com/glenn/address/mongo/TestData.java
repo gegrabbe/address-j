@@ -28,7 +28,7 @@ public class TestData {
 
         int index = 0;
         for (Person person : PERSON_LIST) {
-            entries.add(new Entry(""+index, person, ADDRESS_LIST.get(index), "index: "+(index)));
+            entries.add(new Entry(index, person, ADDRESS_LIST.get(index), "index: "+(index)));
             index++;
         }
 

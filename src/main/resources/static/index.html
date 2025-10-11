@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Book Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Address Book Manager</h1>
+        </header>
+
+        <div class="controls">
+            <button id="listAllBtn" class="btn btn-primary">List All Entries</button>
+            <button id="addNewBtn" class="btn btn-success">Add New Entry</button>
+        </div>
+
+        <div id="searchSection" class="section">
+            <h2>Search Entries</h2>
+            <div class="search-forms">
+                <div class="search-form">
+                    <label for="searchEntryId">Search by Entry ID:</label>
+                    <input type="text" id="searchEntryId" placeholder="Enter entry ID">
+                    <button id="searchEntryIdBtn" class="btn btn-secondary">Search</button>
+                </div>
+                <div class="search-form">
+                    <label for="searchLastName">Search by Last Name:</label>
+                    <input type="text" id="searchLastName" placeholder="Enter last name">
+                    <button id="searchLastNameBtn" class="btn btn-secondary">Search</button>
+                </div>
+                <div class="search-form">
+                    <label for="searchFirstName">Search by First and Last Name:</label>
+                    <input type="text" id="searchFirstName" placeholder="Enter first name">
+                    <input type="text" id="searchFullLastName" placeholder="Enter last name">
+                    <button id="searchFullNameBtn" class="btn btn-secondary">Search</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="deleteSection" class="section">
+            <h2>Delete Entry</h2>
+            <div class="search-forms">
+                <div class="search-form">
+                    <label for="deleteEntryId">Delete by Entry ID:</label>
+                    <input type="text" id="deleteEntryId" placeholder="Enter entry ID to delete">
+                    <button id="deleteEntryIdBtn" class="btn btn-danger">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="addEntrySection" class="section hidden">
+            <h2>Add New Entry</h2>
+            <form id="addEntryForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="entryId">Entry ID (1-999999):</label>
+                        <input type="number" id="entryId" min="1" max="999999" required>
+                    </div>
+                </div>
+
+                <h3>Person Details</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First Name:</label>
+                        <input type="text" id="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last Name:</label>
+                        <input type="text" id="lastName" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age">Age:</label>
+                        <input type="number" id="age" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Gender:</label>
+                        <select id="gender">
+                            <option value="">Select...</option>
+                            <option value="MALE">Male</option>
+                            <option value="FEMALE">Female</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="maritalStatus">Marital Status:</label>
+                        <select id="maritalStatus">
+                            <option value="">Select...</option>
+                            <option value="SINGLE">Single</option>
+                            <option value="MARRIED">Married</option>
+                            <option value="DIVORCED">Divorced</option>
+                            <option value="WIDOWED">Widowed</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3>Address Details</h3>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="street">Street:</label>
+                        <input type="text" id="street">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">City:</label>
+                        <input type="text" id="city">
+                    </div>
+                    <div class="form-group">
+                        <label for="state">State:</label>
+                        <input type="text" id="state">
+                    </div>
+                    <div class="form-group">
+                        <label for="zip">ZIP Code:</label>
+                        <input type="text" id="zip">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone:</label>
+                        <input type="tel" id="phone">
+                    </div>
+                </div>
+
+                <h3>Additional Information</h3>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="notes">Notes:</label>
+                        <textarea id="notes" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-success">Save Entry</button>
+                    <button type="button" id="cancelAddBtn" class="btn btn-danger">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="resultsSection" class="section">
+            <div class="results-header">
+                <h2>Results <span id="resultsCount"></span></h2>
+                <div class="sort-buttons">
+                    <button type="button" id="sortByIdBtn" class="btn btn-secondary btn-small">Sort By ID</button>
+                    <button type="button" id="sortByLastNameBtn" class="btn btn-secondary btn-small">Sort By Last Name</button>
+                </div>
+            </div>
+            <div id="results"></div>
+        </div>
+
+        <div id="messageSection" class="message hidden">
+            <span id="messageText"></span>
+            <button type="button" id="messageClose" class="message-close">&times;</button>
+        </div>
+    </div>
+</body>
+</html>
