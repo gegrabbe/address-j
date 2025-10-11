@@ -27,6 +27,7 @@ public class AddressApi {
     public static final String IMPORT_DATA_FILE = "import-data.json";
     private final MongoService mongoService;
 
+    @SuppressWarnings("unused")
     public AddressApi() {
         this.mongoService = new MongoService("input-data.json");
     }
@@ -42,6 +43,7 @@ public class AddressApi {
     }
 
     @GetMapping
+    @SuppressWarnings("unused")
     public ResponseEntity<?> getAllEntries() {
         logger.debug("#### getAllEntries ####");
         try {
@@ -55,6 +57,7 @@ public class AddressApi {
     }
 
     @GetMapping("/sortById")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> getAllEntriesSortedById() {
         logger.debug("#### getAllEntriesSortedById ####");
         try {
@@ -67,6 +70,7 @@ public class AddressApi {
     }
 
     @GetMapping("/sortByLastName")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> getAllEntriesSortedByLastName() {
         logger.debug("#### getAllEntriesSortedByLastName ####");
         try {
@@ -79,6 +83,7 @@ public class AddressApi {
     }
 
     @GetMapping("/{entryId}")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> getEntryById(@PathVariable Integer entryId) {
         logger.debug("#### getEntryById ####");
         try {
@@ -95,6 +100,7 @@ public class AddressApi {
     }
 
     @GetMapping("/search/lastName/{lastName}")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> searchByLastName(@PathVariable String lastName) {
         logger.debug("#### searchByLastName ####");
         try {
@@ -108,6 +114,7 @@ public class AddressApi {
     }
 
     @GetMapping("/search/name/{firstName}/{lastName}")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> searchByFirstAndLastName(@PathVariable String firstName,
                                                       @PathVariable String lastName) {
         logger.debug("#### searchByFirstAndLastName ####");
@@ -122,6 +129,7 @@ public class AddressApi {
     }
 
     @PostMapping("/saveList")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> saveEntries(@RequestBody List<Entry> entries) {
         logger.debug("#### saveEntries ####");
         try {
@@ -139,6 +147,7 @@ public class AddressApi {
     }
 
     @PostMapping("/save")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> saveOneEntry(@RequestBody Entry entry) {
         logger.debug("#### saveOneEntry ####");
         try {
@@ -156,6 +165,7 @@ public class AddressApi {
     }
 
     @DeleteMapping("/{entryId}")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> deleteEntryById(@PathVariable Integer entryId) {
         logger.debug("#### deleteEntryById ####");
         try {
@@ -169,6 +179,7 @@ public class AddressApi {
     }
 
     @PostMapping("/export")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> export(@RequestParam(required = false) String fileName) {
         logger.debug("#### export ####");
         try {
@@ -189,6 +200,7 @@ public class AddressApi {
     }
 
     @PostMapping("/importData")
+    @SuppressWarnings("unused")
     public ResponseEntity<?> importData(@RequestParam(required = false) String fileName) {
         logger.debug("#### importData ####");
         try {
@@ -257,6 +269,7 @@ public class AddressApi {
     }
 
     @PreDestroy
+    @SuppressWarnings("unused")
     public void cleanup() {
         logger.info("Closing MongoDB connection");
         mongoService.close();
