@@ -1,5 +1,7 @@
 $(document).ready(function() {
     const API_BASE_URL = '/api/entries';
+    let loadedEntryIds = []; // Sorted list of loaded entry IDs
+    let nameMap = new Map();
 
     // Helper function to extract error message from response
     function getErrorMessage(xhr, defaultError) {
@@ -22,11 +24,44 @@ $(document).ready(function() {
         hideAddForm();
     });
 
+    $('#saveAndAddAnotherBtn').click(function() {
+        saveEntry(true); // true = keep form open for another entry
+    });
+
+    $('#cancelEditBtn').click(function() {
+        hideEditForm();
+    });
+
+    $('#editEntryBtn').click(function() {
+        const entryId = $('#selectedEntryId').val().trim();
+        if (entryId) {
+            const entryIdNum = parseInt(entryId);
+            showEditForm(entryIdNum);
+        } else {
+            showMessage('Please select an entry to edit', 'error');
+        }
+    });
+
     // Message close button handler - using event delegation for reliability
     $(document).on('click', '#messageClose', function(e) {
         e.preventDefault();
         e.stopPropagation();
         $('#messageSection').addClass('hidden');
+    });
+
+    // Entry card click handler - populate selected field
+    $(document).on('click', '.entry-card', function(e) {
+        const entryId = $(this).data('entry-id');
+        if (entryId) {
+            $('#selectedEntryId').val(entryId);
+            // Scroll to selected section
+            $('#selectedSection')[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Highlight the input briefly
+            $('#selectedEntryId').addClass('highlight');
+            setTimeout(function() {
+                $('#selectedEntryId').removeClass('highlight');
+            }, 1000);
+        }
     });
 
     // Search handlers
@@ -60,13 +95,15 @@ $(document).ready(function() {
 
     // Delete handler
     $('#deleteEntryIdBtn').click(function() {
-        const entryId = $('#deleteEntryId').val().trim();
+        const entryId = $('#selectedEntryId').val().trim();
         if (entryId) {
-            if (confirm(`Are you sure you want to delete all entries with ID: ${entryId}?`)) {
-                deleteEntryById(entryId);
+            const entryIdNum = parseInt(entryId);
+            const entryName = nameMap.get(entryIdNum) || 'Unknown';
+            if (confirm(`Are you sure you want to delete the entry with ID: ${entryId}?\nName: ${entryName}`)) {
+                deleteEntryById(entryIdNum);
             }
         } else {
-            showMessage('Please enter an entry ID to delete', 'error');
+            showMessage('Please select an entry ID to delete', 'error');
         }
     });
 
@@ -82,14 +119,19 @@ $(document).ready(function() {
     // Form submission
     $('#addEntryForm').submit(function(e) {
         e.preventDefault();
-        saveEntry();
+        saveEntry(false); // false = close form after save
     });
 
-    // Load all entries
+    $('#editEntryForm').submit(function(e) {
+        e.preventDefault();
+        saveEditedEntry();
+    });
+
+    // Load all entries (sorted by ID by default)
     function loadAllEntries() {
         showLoading();
         $.ajax({
-            url: API_BASE_URL,
+            url: `${API_BASE_URL}/sortById`,
             method: 'GET',
             success: function(data) {
                 displayResults(data);
@@ -175,7 +217,9 @@ $(document).ready(function() {
     }
 
     // Save new entry
-    function saveEntry() {
+    function saveEntry(keepOpen) {
+        keepOpen = keepOpen || false;
+
         // Validate entry ID
         const entryIdValue = $('#entryId').val();
         const entryIdNum = parseInt(entryIdValue);
@@ -212,10 +256,38 @@ $(document).ready(function() {
             data: JSON.stringify(entry),
             success: function() {
                 showMessage('Entry saved successfully!', 'success');
+
+                // Update entries list in background
+                $.ajax({
+                    url: API_BASE_URL,
+                    method: 'GET',
+                    success: function(data) {
+                        // Update loadedEntryIds for next ID calculation
+                        loadedEntryIds = data
+                            .map(entry => entry.entryId)
+                            .filter(id => id !== null && id !== undefined)
+                            .sort((a, b) => a - b);
+                    }
+                });
+
                 resetForm();
-                hideAddForm();
-                // Optionally reload all entries
-                loadAllEntries();
+
+                if (keepOpen) {
+                    // Calculate and set next ID
+                    let nextId = entryIdNum + 1;
+                    if (loadedEntryIds.length > 0) {
+                        const maxId = Math.max(...loadedEntryIds, entryIdNum);
+                        nextId = maxId + 1;
+                    }
+                    $('#entryId').val(nextId);
+
+                    // Keep form open, scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    hideAddForm();
+                    // Reload all entries to show in results
+                    loadAllEntries();
+                }
             },
             error: function(xhr, status, error) {
                 const errorMsg = getErrorMessage(xhr, 'Error saving entry: ' + error);
@@ -231,7 +303,7 @@ $(document).ready(function() {
             method: 'DELETE',
             success: function() {
                 showMessage(`Successfully deleted entries with ID: ${entryId}`, 'success');
-                $('#deleteEntryId').val('');
+                $('#selectedEntryId').val('');
                 // Reload all entries to reflect the deletion
                 loadAllEntries();
             },
@@ -285,12 +357,24 @@ $(document).ready(function() {
 
         $('#resultsCount').text(`(${entries.length})`);
 
+        // Clear selected entry field
+        $('#selectedEntryId').val('');
+
         if (entries.length === 0) {
             resultsDiv.html('<p class="loading">No entries found</p>');
+            loadedEntryIds = [];
+            nameMap = new Map();
             return;
         }
 
+        // Update loadedEntryIds with sorted unique IDs
+        loadedEntryIds = entries
+            .map(entry => entry.entryId)
+            .filter(id => id !== null && id !== undefined)
+            .sort((a, b) => a - b);
+
         entries.forEach(function(entry) {
+            nameMap.set(entry.entryId, entry.person.firstName + " " + entry.person.lastName);
             const card = createEntryCard(entry);
             resultsDiv.append(card);
         });
@@ -301,7 +385,7 @@ $(document).ready(function() {
         const person = entry.person || {};
         const address = entry.address || {};
 
-        let html = '<div class="entry-card">';
+        let html = `<div class="entry-card" data-entry-id="${entry.entryId || ''}">`;
         html += '<div class="entry-header">';
         html += `<div class="entry-id">ID: ${entry.entryId || 'N/A'}</div>`;
         html += `<div class="entry-name">${person.firstName || ''} ${person.lastName || ''}</div>`;
@@ -311,13 +395,13 @@ $(document).ready(function() {
         html += '<div class="entry-section">';
         html += '<div class="entry-section-title">Person Details</div>';
         if (person.age) {
-            html += `<div class="entry-detail"><span class="entry-detail-label">Age:</span><span class="entry-detail-value">${person.age}</span></div>`;
+            html += `<div class="entry-detail"><span class="entry-detail-label">Age:</span><span class="entry-detail-value">&nbsp;${person.age}</span></div>`;
         }
         if (person.gender) {
-            html += `<div class="entry-detail"><span class="entry-detail-label">Gender:</span><span class="entry-detail-value">${person.gender}</span></div>`;
+            html += `<div class="entry-detail"><span class="entry-detail-label">Gender:</span><span class="entry-detail-value">&nbsp;${person.gender}</span></div>`;
         }
         if (person.maritalStatus) {
-            html += `<div class="entry-detail"><span class="entry-detail-label">Marital Status:</span><span class="entry-detail-value">${person.maritalStatus}</span></div>`;
+            html += `<div class="entry-detail"><span class="entry-detail-label">Marital Status:</span><span class="entry-detail-value">&nbsp;${person.maritalStatus}</span></div>`;
         }
         html += '</div>';
 
@@ -355,6 +439,16 @@ $(document).ready(function() {
 
     // Show add form
     function showAddForm() {
+        // Calculate next unique entryId
+        let nextId = 1;
+        if (loadedEntryIds.length > 0) {
+            const maxId = loadedEntryIds[loadedEntryIds.length - 1];
+            nextId = maxId + 1;
+        }
+
+        // Prepopulate the entryId field
+        $('#entryId').val(nextId);
+
         $('#addEntrySection').removeClass('hidden');
         $('#resultsSection').addClass('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -370,6 +464,132 @@ $(document).ready(function() {
     // Reset form
     function resetForm() {
         $('#addEntryForm')[0].reset();
+    }
+
+    // Show edit form
+    function showEditForm(entryId) {
+        // Fetch the entry data
+        $.ajax({
+            url: `${API_BASE_URL}/${entryId}`,
+            method: 'GET',
+            success: function(data) {
+                if (data.length > 0) {
+                    const entry = data[0];
+                    const person = entry.person || {};
+                    const address = entry.address || {};
+
+                    // Populate the form with entry data
+                    $('#editEntryId').val(entry.entryId);
+                    $('#editFirstName').val(person.firstName || '');
+                    $('#editLastName').val(person.lastName || '');
+                    $('#editAge').val(person.age || '');
+                    $('#editGender').val(person.gender || '');
+                    $('#editMaritalStatus').val(person.maritalStatus || '');
+                    $('#editStreet').val(address.street || '');
+                    $('#editCity').val(address.city || '');
+                    $('#editState').val(address.state || '');
+                    $('#editZip').val(address.zip || '');
+                    $('#editEmail').val(address.email || '');
+                    $('#editPhone').val(address.phone || '');
+                    $('#editNotes').val(entry.notes || '');
+
+                    // Show edit section, hide others
+                    $('#editEntrySection').removeClass('hidden');
+                    $('#addEntrySection').addClass('hidden');
+                    $('#resultsSection').addClass('hidden');
+
+                    // Scroll to the edit section
+                    $('#editEntrySection')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                    // Set focus to the first editable field (after a small delay to ensure scrolling completes)
+                    setTimeout(function() {
+                        $('#editFirstName').focus();
+                    }, 300);
+                } else {
+                    showMessage('Entry not found', 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                const errorMsg = getErrorMessage(xhr, 'Error loading entry: ' + error);
+                showMessage(errorMsg, 'error');
+            }
+        });
+    }
+
+    // Hide edit form
+    function hideEditForm() {
+        $('#editEntrySection').addClass('hidden');
+        $('#resultsSection').removeClass('hidden');
+        resetEditForm();
+    }
+
+    // Reset edit form
+    function resetEditForm() {
+        $('#editEntryForm')[0].reset();
+    }
+
+    // Save edited entry (delete old, save new)
+    function saveEditedEntry() {
+        // Get the original entry ID (readonly field)
+        const originalEntryId = parseInt($('#editEntryId').val());
+
+        // Validate form data
+        const entryIdValue = $('#editEntryId').val();
+        const entryIdNum = parseInt(entryIdValue);
+
+        if (!entryIdValue || isNaN(entryIdNum) || entryIdNum < 1 || entryIdNum > 999999) {
+            showMessage('Entry ID must be an integer between 1 and 999,999', 'error');
+            return;
+        }
+
+        // Build the updated entry object
+        const entry = {
+            entryId: entryIdNum,
+            person: {
+                firstName: $('#editFirstName').val().trim(),
+                lastName: $('#editLastName').val().trim(),
+                age: $('#editAge').val() ? parseInt($('#editAge').val()) : null,
+                gender: $('#editGender').val() || null,
+                maritalStatus: $('#editMaritalStatus').val() || null
+            },
+            address: {
+                street: $('#editStreet').val().trim() || null,
+                city: $('#editCity').val().trim() || null,
+                state: $('#editState').val().trim() || null,
+                zip: $('#editZip').val().trim() || null,
+                email: $('#editEmail').val().trim() || null,
+                phone: $('#editPhone').val().trim() || null
+            },
+            notes: $('#editNotes').val().trim() || null
+        };
+
+        // First, delete the old entry
+        $.ajax({
+            url: `${API_BASE_URL}/${originalEntryId}`,
+            method: 'DELETE',
+            success: function() {
+                // Then, save the new entry
+                $.ajax({
+                    url: `${API_BASE_URL}/save`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(entry),
+                    success: function() {
+                        showMessage('Entry updated successfully!', 'success');
+                        hideEditForm();
+                        loadAllEntries();
+                    },
+                    error: function(xhr, status, error) {
+                        const errorMsg = getErrorMessage(xhr, 'Error saving updated entry: ' + error);
+                        showMessage(errorMsg, 'error');
+                    }
+                });
+            },
+            error: function(xhr, status, error) {
+                const errorMsg = getErrorMessage(xhr, 'Error deleting old entry: ' + error);
+                showMessage(errorMsg, 'error');
+            }
+        });
     }
 
     // Show loading

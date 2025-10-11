@@ -160,6 +160,21 @@ h3 {
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+.search-form input.highlight {
+    animation: highlightPulse 1s ease;
+}
+
+@keyframes highlightPulse {
+    0%, 100% {
+        background-color: white;
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+    }
+    50% {
+        background-color: #e8ecff;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.3);
+    }
+}
+
 #addEntryForm {
     background-color: white;
     padding: 20px;
@@ -225,11 +240,17 @@ h3 {
     padding: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
 }
 
 .entry-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    background-color: #f8f9ff;
+}
+
+.entry-card:active {
+    transform: translateY(-1px);
 }
 
 .entry-header {

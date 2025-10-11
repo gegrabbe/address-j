@@ -35,18 +35,20 @@
                 <div class="search-form">
                     <label for="searchFirstName">Search by First and Last Name:</label>
                     <input type="text" id="searchFirstName" placeholder="Enter first name">
+                    <label for="searchFullLastName" style="display:none;">Last Name:</label>
                     <input type="text" id="searchFullLastName" placeholder="Enter last name">
                     <button id="searchFullNameBtn" class="btn btn-secondary">Search</button>
                 </div>
             </div>
         </div>
 
-        <div id="deleteSection" class="section">
-            <h2>Delete Entry</h2>
+        <div id="selectedSection" class="section">
+            <h2>Selected Entry</h2>
             <div class="search-forms">
                 <div class="search-form">
-                    <label for="deleteEntryId">Delete by Entry ID:</label>
-                    <input type="text" id="deleteEntryId" placeholder="Enter entry ID to delete">
+                    <label for="selectedEntryId">Selected by Entry ID:</label>
+                    <input type="text" id="selectedEntryId" placeholder="Enter entry ID to delete">
+                    <button id="editEntryBtn" class="btn btn-primary">Edit</button>
                     <button id="deleteEntryIdBtn" class="btn btn-danger">Delete</button>
                 </div>
             </div>
@@ -65,11 +67,11 @@
                 <h3>Person Details</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="firstName">First Name:</label>
+                        <label for="firstName">First Name:&nbsp;</label>
                         <input type="text" id="firstName" required>
                     </div>
                     <div class="form-group">
-                        <label for="lastName">Last Name:</label>
+                        <label for="lastName">Last Name:&nbsp;</label>
                         <input type="text" id="lastName" required>
                     </div>
                 </div>
@@ -79,7 +81,7 @@
                         <input type="number" id="age" min="0">
                     </div>
                     <div class="form-group">
-                        <label for="gender">Gender:</label>
+                        <label for="gender">Gender:&nbsp;</label>
                         <select id="gender">
                             <option value="">Select...</option>
                             <option value="MALE">Male</option>
@@ -88,7 +90,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="maritalStatus">Marital Status:</label>
+                        <label for="maritalStatus">Marital Status:&nbsp;</label>
                         <select id="maritalStatus">
                             <option value="">Select...</option>
                             <option value="SINGLE">Single</option>
@@ -142,7 +144,103 @@
 
                 <div class="form-buttons">
                     <button type="submit" class="btn btn-success">Save Entry</button>
+                    <button type="button" id="saveAndAddAnotherBtn" class="btn btn-primary">Save Entry And Add Another</button>
                     <button type="button" id="cancelAddBtn" class="btn btn-danger">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="editEntrySection" class="section hidden">
+            <h2>Edit Entry</h2>
+            <form id="editEntryForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editEntryId">Entry ID (1-999999):</label>
+                        <input type="number" id="editEntryId" min="1" max="999999" required readonly>
+                    </div>
+                </div>
+
+                <h3>Person Details</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editFirstName">First Name:&nbsp;</label>
+                        <input type="text" id="editFirstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editLastName">Last Name:&nbsp;</label>
+                        <input type="text" id="editLastName" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editAge">Age:</label>
+                        <input type="number" id="editAge" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editGender">Gender:&nbsp;</label>
+                        <select id="editGender">
+                            <option value="">Select...</option>
+                            <option value="MALE">Male</option>
+                            <option value="FEMALE">Female</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editMaritalStatus">Marital Status:&nbsp;</label>
+                        <select id="editMaritalStatus">
+                            <option value="">Select...</option>
+                            <option value="SINGLE">Single</option>
+                            <option value="MARRIED">Married</option>
+                            <option value="DIVORCED">Divorced</option>
+                            <option value="WIDOWED">Widowed</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3>Address Details</h3>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="editStreet">Street:</label>
+                        <input type="text" id="editStreet">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editCity">City:</label>
+                        <input type="text" id="editCity">
+                    </div>
+                    <div class="form-group">
+                        <label for="editState">State:</label>
+                        <input type="text" id="editState">
+                    </div>
+                    <div class="form-group">
+                        <label for="editZip">ZIP Code:</label>
+                        <input type="text" id="editZip">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editEmail">Email:</label>
+                        <input type="email" id="editEmail">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPhone">Phone:</label>
+                        <input type="tel" id="editPhone">
+                    </div>
+                </div>
+
+                <h3>Additional Information</h3>
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="editNotes">Notes:</label>
+                        <textarea id="editNotes" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-success">Save Changes</button>
+                    <button type="button" id="cancelEditBtn" class="btn btn-danger">Cancel</button>
                 </div>
             </form>
         </div>
