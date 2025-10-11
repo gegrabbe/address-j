@@ -34,6 +34,7 @@ public class FileDataUtil {
             logger.debug("JSON content: \n{}", StringUtils.substring(json, 0 ,100));
         } catch (IOException e) {
             logger.error("Failed to write JSON to file", e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -48,7 +49,7 @@ public class FileDataUtil {
             return entries;
         } catch (IOException e) {
             logger.error("Failed to read JSON from file: {}", fileName, e);
-            return List.of();
+            throw new RuntimeException(e);
         }
     }
 

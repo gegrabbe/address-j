@@ -518,14 +518,83 @@ function sortEntriesByLastName() {
 
 // Export entries to file
 function exportEntries() {
+    const fileName = prompt('Enter filename for export:', 'export-data.json');
+
+    // User cancelled the prompt
+    if (fileName === null) {
+        return;
+    }
+
+    // Trim and validate
+    const trimmedFileName = fileName.trim();
+    if (trimmedFileName === '') {
+        showMessage('Filename cannot be empty', 'error');
+        return;
+    }
+
+    // Check if filename starts with /
+    if (trimmedFileName.startsWith('/')) {
+        showMessage('Filename cannot begin with /', 'error');
+        return;
+    }
+
+    // Check if filename contains :
+    if (trimmedFileName.includes(':')) {
+        showMessage('Filename cannot contain :', 'error');
+        return;
+    }
+
     $.ajax({
-        url: `${API_BASE_URL}/export`,
+        url: `${API_BASE_URL}/export?fileName=${encodeURIComponent(trimmedFileName)}`,
         method: 'POST',
         success: function() {
-            showMessage('Entries exported successfully to export-data.json', 'success');
+            showMessage(`Entries exported successfully to ${trimmedFileName}`, 'success');
         },
         error: function(xhr, status, error) {
             const errorMsg = getErrorMessage(xhr, 'Error exporting entries: ' + error);
+            showMessage(errorMsg, 'error');
+        }
+    });
+}
+
+// Import entries from file
+function importEntries() {
+    const fileName = prompt('Enter filename for import:', 'import-data.json');
+
+    // User cancelled the prompt
+    if (fileName === null) {
+        return;
+    }
+
+    // Trim and validate
+    const trimmedFileName = fileName.trim();
+    if (trimmedFileName === '') {
+        showMessage('Filename cannot be empty', 'error');
+        return;
+    }
+
+    // Check if filename starts with /
+    if (trimmedFileName.startsWith('/')) {
+        showMessage('Filename cannot begin with /', 'error');
+        return;
+    }
+
+    // Check if filename contains :
+    if (trimmedFileName.includes(':')) {
+        showMessage('Filename cannot contain :', 'error');
+        return;
+    }
+
+    $.ajax({
+        url: `${API_BASE_URL}/importData?fileName=${encodeURIComponent(trimmedFileName)}`,
+        method: 'POST',
+        success: function() {
+            showMessage(`Entries imported successfully from ${trimmedFileName}`, 'success');
+            // Reload all entries to show the imported data
+            loadAllEntries();
+        },
+        error: function(xhr, status, error) {
+            const errorMsg = getErrorMessage(xhr, 'Error importing entries: ' + error);
             showMessage(errorMsg, 'error');
         }
     });
@@ -544,6 +613,10 @@ $(document).ready(function() {
 
     $('#exportBtn').click(function() {
         exportEntries();
+    });
+
+    $('#importBtn').click(function() {
+        importEntries();
     });
 
     $('#cancelAddBtn').click(function() {

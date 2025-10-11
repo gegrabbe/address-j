@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -22,6 +24,7 @@ public class AddressApi {
     private static final Logger logger = LoggerFactory.getLogger(AddressApi.class);
     public static final String DATABASE_ERROR = "Database Error";
     public static final String EXPORT_DATA_FILE = "export-data.json";
+    public static final String IMPORT_DATA_FILE = "import-data.json";
     private final MongoService mongoService;
 
     public AddressApi() {
@@ -125,11 +128,7 @@ public class AddressApi {
             mongoService.saveToDatabase(entries);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (MongoWriteException we) {
-            logger.error("Failed to save entry - duplicate key", we);
-            String msg = we.getMessage();
-            if (we.getMessage().contains("duplicate key error")) {
-                msg = "Duplicate Entry ID Exists";
-            }
+            String msg = duplicateMsg(we);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, msg);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         } catch (Exception e) {
@@ -146,11 +145,7 @@ public class AddressApi {
             mongoService.saveEntryToDatabase(entry);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (MongoWriteException we) {
-            logger.error("Failed to save entry - duplicate key", we);
-            String msg = we.getMessage();
-            if (we.getMessage().contains("duplicate key error")) {
-                msg = "Duplicate Entry ID Exists";
-            }
+            String msg = duplicateMsg(we);
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, msg);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         } catch (Exception e) {
@@ -180,9 +175,9 @@ public class AddressApi {
             if (StringUtils.isEmpty(fileName)) {
                 fileName = EXPORT_DATA_FILE;
             }
-            if (fileName.startsWith("/")) {
-                ErrorResponse errorResponse = new ErrorResponse("Invalid File Name", "File name cannot begin with /");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            ResponseEntity<?> responseEntity = fileNameCheck(fileName, false);
+            if (responseEntity != null) {
+                return responseEntity;
             }
             new FileDataUtil(fileName).writeData(sortById(mongoService.readFromDatabase()));
             return ResponseEntity.status(HttpStatus.OK).build();
@@ -191,6 +186,74 @@ public class AddressApi {
             ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
+    }
+
+    @PostMapping("/importData")
+    public ResponseEntity<?> importData(@RequestParam(required = false) String fileName) {
+        logger.debug("#### importData ####");
+        try {
+            if (StringUtils.isEmpty(fileName)) {
+                fileName = IMPORT_DATA_FILE;
+            }
+            ResponseEntity<?> responseEntity = fileNameCheck(fileName, true);
+            if (responseEntity != null) {
+                return responseEntity;
+            }
+            List<Integer> oldEntriesIds = sortById(mongoService.readFromDatabase())
+                    .stream().map(Entry::entryId).toList();
+
+            int maxId = 0;
+            if (!oldEntriesIds.isEmpty()) {
+                maxId = oldEntriesIds.getLast();
+            }
+
+            List<Entry> newEntries = fixNewEntryIds(new FileDataUtil(fileName).readData(), maxId);
+            mongoService.saveToDatabase(newEntries);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } catch (MongoWriteException we) {
+            String msg = duplicateMsg(we);
+            ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, msg);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        } catch (Exception e) {
+            logger.error("Failed to import - unexpected error", e);
+            ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    private List<Entry> fixNewEntryIds(List<Entry> newEntries, Integer maxId) {
+        int index = maxId;
+        List<Entry> fixed = new ArrayList<>();
+        for (Entry entry : newEntries) {
+            index++;
+            fixed.add(new Entry(index, entry.person(), entry.address(), entry.notes()));
+        }
+        return fixed;
+    }
+
+    private ResponseEntity<?> fileNameCheck(String fileName, boolean mustExist) {
+        if (fileName.startsWith("/")) {
+            ErrorResponse errorResponse = new ErrorResponse("Invalid File Name", "File name cannot begin with /");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+        if (fileName.contains(":")) {
+            ErrorResponse errorResponse = new ErrorResponse("Invalid File Name", "File name cannot contain :");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+        if (mustExist && !(new File(fileName).canRead())) {
+            ErrorResponse errorResponse = new ErrorResponse("Invalid File Name", "File does not exist");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+        return null;
+    }
+
+    private String duplicateMsg(MongoWriteException we) {
+        logger.error("Failed to save entry - duplicate key", we);
+        String msg = we.getMessage();
+        if (we.getMessage().contains("duplicate key error")) {
+            msg = "Duplicate Entry ID Exists";
+        }
+        return msg;
     }
 
     @PreDestroy
