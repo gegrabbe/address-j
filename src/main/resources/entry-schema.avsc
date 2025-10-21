@@ -1,0 +1,44 @@
+{
+  "type": "record",
+  "name": "Entry",
+  "namespace": "com.glenn.address.domain",
+  "fields": [
+    {
+      "name": "entryId",
+      "type": ["null", "int"]
+    },
+    {
+      "name": "person",
+      "type": {
+        "type": "record",
+        "name": "Person",
+        "fields": [
+          {"name": "firstName", "type": "string"},
+          {"name": "lastName", "type": "string"},
+          {"name": "age", "type": ["null", "int"]},
+          {"name": "gender", "type": ["null", "string"]},
+          {"name": "maritalStatus", "type": ["null", "string"]}
+        ]
+      }
+    },
+    {
+      "name": "address",
+      "type": {
+        "type": "record",
+        "name": "Address",
+        "fields": [
+          {"name": "street", "type": ["null", "string"]},
+          {"name": "city", "type": ["null", "string"]},
+          {"name": "state", "type": ["null", "string"]},
+          {"name": "zip", "type": ["null", "string"]},
+          {"name": "email", "type": ["null", "string"]},
+          {"name": "phone", "type": ["null", "string"]}
+        ]
+      }
+    },
+    {
+      "name": "notes",
+      "type": ["null", "string"]
+    }
+  ]
+}

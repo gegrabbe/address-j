@@ -39,3 +39,5 @@ out/
 logs/
 export-data.json
 import-data.json
+output-data.bin
+input-data.bin
