@@ -28,10 +28,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AvroService {
+public class AvroService implements BinaryService {
     private static final Logger logger = LoggerFactory.getLogger(AvroService.class);
-    private static final String OUT_FILE_NAME = "output-data.bin";
-    private static final String IN_FILE_NAME = "input-data.bin";
+    private static final String OUT_FILE_NAME = "output-data.avro";
+    private static final String IN_FILE_NAME = "input-data.avro";
     private static final String SCHEMA_FILE = "entry-schema.avsc";
 
     private final Schema schema;
@@ -62,6 +62,7 @@ public class AvroService {
      * @param entries    List of Entry objects to serialize
      * @param outputFile Output file path
      */
+    @Override
     public void writeEntries(List<Entry> entries, String outputFile) {
         try (FileOutputStream fos = new FileOutputStream(outputFile)) {
             Encoder encoder = EncoderFactory.get().binaryEncoder(fos, null);
@@ -116,6 +117,7 @@ public class AvroService {
      * Serialize JSON string to Avro binary format
      * Converts JSON string to a List<Entry> and uses writeEntries to avoid duplication
      */
+    @Override
     public void writeString(String jsonString) {
         logger.debug("Writing JSON string to Avro format");
         try {
@@ -140,6 +142,7 @@ public class AvroService {
      * @param inputFile Path to the Avro binary file
      * @return List of Entry objects read from the file
      */
+    @Override
     public List<Entry> readEntries(String inputFile) {
         List<Entry> entries = new ArrayList<>();
         try (FileInputStream fis = new FileInputStream(inputFile)) {
@@ -222,32 +225,31 @@ public class AvroService {
             List<Entry> entries = fileUtil.readData();
 
             if (entries == null || entries.isEmpty()) {
-                System.err.println("No entries found in " + testFile);
+                logger.error("No entries found in {}", testFile);
                 System.exit(1);
             }
 
             // Write entries to Avro binary file
-            AvroService avroService = new AvroService();
-            avroService.writeEntries(entries, outputFile);
+            BinaryService binaryService = new AvroService();
+            binaryService.writeEntries(entries, outputFile);
 
-            System.out.println("Successfully converted " + entries.size() + " entries from JSON to Avro binary format");
-            System.out.println("Output file: " + new File(outputFile).getAbsolutePath());
+            logger.info("Successfully converted {} entries from JSON to Avro binary format", entries.size());
+            logger.info("Output file: {}", new File(outputFile).getAbsolutePath());
 
             // Verify by reading input-data.bin and comparing to entries written to output-data.bin
-            List<Entry> readEntries = avroService.readEntries(IN_FILE_NAME);
-            System.out.println("\nRead " + readEntries.size() + " entries from " + IN_FILE_NAME);
+            List<Entry> readEntries = binaryService.readEntries(IN_FILE_NAME);
+            logger.info("\nRead {} entries from " + IN_FILE_NAME, readEntries.size());
 
             if (entries.equals(readEntries)) {
-                System.out.println("✓ Verification successful: Entries match between output and input files");
+                logger.info("✓ Verification successful: Entries match between output and input files");
             } else {
-                System.out.println("✗ Verification failed: Entries do not match");
-                System.out.println("  Written entries: " + entries.size());
-                System.out.println("  Read entries: " + readEntries.size());
+                logger.info("✗ Verification failed: Entries do not match");
+                logger.info("  Written entries: {}", entries.size());
+                logger.info("  Read entries: {}", readEntries.size());
             }
 
         } catch (Exception e) {
-            System.err.println("Error during Avro conversion: " + e.getMessage());
-            e.printStackTrace();
+            logger.error("Error during Avro conversion: ", e);
             System.exit(1);
         }
     }

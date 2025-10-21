@@ -41,3 +41,7 @@ export-data.json
 import-data.json
 output-data.bin
 input-data.bin
+input-data.avro
+input-data.bson
+output-data.avro
+output-data.bson
