@@ -8,6 +8,10 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Test class for validating CompareById and CompareByLastName comparator functionality.
+ * Tests sorting of Entry objects by ID and by person's last name.
+ */
 public class ComparatorTest {
 
     private static final List<Person> PERSON_LIST = List.of(

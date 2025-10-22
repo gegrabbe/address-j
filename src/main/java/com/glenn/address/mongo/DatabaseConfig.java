@@ -7,6 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Manages MongoDB connection configuration loaded from database.properties file.
+ * Provides access to MongoDB host, port, database name, and collection name settings.
+ * Configuration values have sensible defaults if not specified in the properties file.
+ */
 public class DatabaseConfig {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseConfig.class);
     private static final String PROPERTIES_FILE = "database.properties";

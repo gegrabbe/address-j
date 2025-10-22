@@ -19,6 +19,11 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.regex;
 
+/**
+ * Service class for MongoDB operations on address book entries.
+ * Provides CRUD operations and search functionality for entries stored in MongoDB.
+ * Implements AutoCloseable for proper resource management of the MongoClient connection.
+ */
 public class MongoService implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(MongoService.class);
     private static final String FILE_NAME = "input-data.json";

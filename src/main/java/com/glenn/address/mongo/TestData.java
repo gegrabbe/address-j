@@ -7,6 +7,10 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Utility class for generating test address book entries.
+ * Creates sample entries with predefined person and address data, and saves them to a JSON file.
+ */
 public class TestData {
     private static final Logger logger = LoggerFactory.getLogger(TestData.class);
     private static final String FILE_NAME = "input-data.json";

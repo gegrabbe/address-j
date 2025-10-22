@@ -27,6 +27,10 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Implementation of BinaryService for reading/writing entries in BSON binary format.
+ * Uses MongoDB's BSON codec for efficient document serialization of address book entries.
+ */
 public class BsonService implements BinaryService {
     private static final Logger logger = LoggerFactory.getLogger(BsonService.class);
     private static final String OUT_FILE_NAME = "output-data.bson";

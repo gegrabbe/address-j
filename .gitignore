@@ -42,6 +42,10 @@ import-data.json
 output-data.bin
 input-data.bin
 input-data.avro
-input-data.bson
 output-data.avro
+input-data.bson
 output-data.bson
+input-data.gz
+output-data.gz
+input-data.addr
+output-data.addr

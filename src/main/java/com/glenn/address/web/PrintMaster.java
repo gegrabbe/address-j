@@ -24,6 +24,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 
+/**
+ * REST controller for generating PDF documents of address book entries.
+ * Provides endpoints to generate formatted PDF reports of address book data with tables and styling.
+ */
 @RestController
 @RequestMapping("/api/print")
 public class PrintMaster {

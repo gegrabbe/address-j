@@ -2,6 +2,10 @@ package com.glenn.address.domain;
 
 import java.util.Comparator;
 
+/**
+ * Comparator for sorting Entry objects by entry ID in ascending numerical order.
+ * Handles null entries by placing them at the end of the sorted list.
+ */
 public class CompareById implements Comparator<Entry> {
 
     @Override

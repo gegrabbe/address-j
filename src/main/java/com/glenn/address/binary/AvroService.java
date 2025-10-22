@@ -28,6 +28,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Implementation of BinaryService for reading/writing entries in Apache Avro binary format.
+ * Provides efficient schema-based serialization with compression for address book entries.
+ */
 public class AvroService implements BinaryService {
     private static final Logger logger = LoggerFactory.getLogger(AvroService.class);
     private static final String OUT_FILE_NAME = "output-data.avro";

@@ -2,6 +2,10 @@ package com.glenn.address.domain;
 
 import java.util.Comparator;
 
+/**
+ * Comparator for sorting Entry objects by person's last name in ascending alphabetical order.
+ * Handles null entries and missing names gracefully by returning equality.
+ */
 public class CompareByLastName implements Comparator<Entry> {
 
     @Override

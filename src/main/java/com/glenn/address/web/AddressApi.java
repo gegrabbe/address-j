@@ -17,6 +17,11 @@ import org.springframework.web.bind.annotation.*;
 import java.io.File;
 import java.util.List;
 
+/**
+ * REST API controller for address book entry management.
+ * Provides endpoints for CRUD operations and searching address entries through HTTP.
+ * Handles request routing and response formatting for the address book API.
+ */
 @RestController
 @RequestMapping("/api/entries")
 public class AddressApi {

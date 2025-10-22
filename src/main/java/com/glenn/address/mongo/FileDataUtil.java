@@ -13,6 +13,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Utility class for reading and writing address book entries to/from JSON files.
+ * Provides serialization and deserialization of Entry objects using Gson with pretty printing.
+ */
 public class FileDataUtil {
     private static final Logger logger = LoggerFactory.getLogger(FileDataUtil.class);
 

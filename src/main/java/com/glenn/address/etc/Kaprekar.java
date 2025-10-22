@@ -5,6 +5,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
+/**
+ * Utility class implementing Kaprekar's constant calculation for 4-digit numbers.
+ * Kaprekar's constant (6174) is reached by repeatedly arranging digits in descending
+ * and ascending order, then subtracting. Provides method to calculate steps to reach this constant.
+ */
 public class Kaprekar {
     private static final Logger log = LoggerFactory.getLogger(Kaprekar.class);
     private static final Integer KAPREKAR = 6174;
