@@ -50,3 +50,5 @@ output-data.gz
 input-data.addr
 output-data.addr
 test-data.json
+test-binary-input.*
+test-binary-output.*
