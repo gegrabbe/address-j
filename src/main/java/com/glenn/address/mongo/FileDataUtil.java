@@ -7,9 +7,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,7 +38,7 @@ public class FileDataUtil {
         try (FileWriter writer = new FileWriter(fileName)) {
             writer.write(json);
             logger.info("Successfully wrote {} entries to input-data.json", entries.size());
-            logger.debug("JSON content: \n{}", StringUtils.substring(json, 0 ,100));
+            logger.debug("JSON content: \n{}", StringUtils.substring(json, 0, 100));
         } catch (IOException e) {
             logger.error("Failed to write JSON to file", e);
             throw new RuntimeException(e);
@@ -49,11 +52,27 @@ public class FileDataUtil {
             Entry[] entriesArray = gson.fromJson(reader, Entry[].class);
             List<Entry> entries = Arrays.asList(entriesArray);
             logger.info("Successfully read {} entries from {}", entries.size(), fileName);
-            logger.debug("Read entries: {}", StringUtils.substring(entries.toString(), 0 ,100));
+            logger.debug("Read entries: {}", StringUtils.substring(entries.toString(), 0, 100));
             return entries;
         } catch (IOException e) {
             logger.error("Failed to read JSON from file: {}", fileName, e);
             throw new RuntimeException(e);
+        }
+    }
+
+    public boolean delete(String deleteName) {
+        File file = new File(deleteName);
+        return file.delete();
+    }
+
+    public boolean copy(String fromName, String toName) {
+        try {
+            Files.copy(Paths.get(fromName), Paths.get(toName));
+            logger.info("Successfully copied file from {} to {}", fromName, toName);
+            return true;
+        } catch (IOException e) {
+            logger.error("Failed to copy file from {} to {}", fromName, toName, e);
+            return false;
         }
     }
 

@@ -305,6 +305,17 @@ public class EncodedService implements BinaryService {
             logger.info("Successfully converted {} entries from JSON to Avro encoded format", entries.size());
             logger.info("Output file: {}", new File(outputFile).getAbsolutePath());
 
+            // Delete input file and copy output to input for next run
+            FileDataUtil fileUtil2 = new FileDataUtil(IN_FILE_NAME);
+            if (fileUtil2.delete(IN_FILE_NAME)) {
+                logger.info("Deleted old input file: {}", IN_FILE_NAME);
+            }
+            if (fileUtil2.copy(outputFile, IN_FILE_NAME)) {
+                logger.info("Copied output file to input file: {} -> {}", outputFile, IN_FILE_NAME);
+            } else {
+                throw new RuntimeException("copy failed. cannot proceed");
+            }
+
             // Verify by reading input-data.abook and comparing to entries written to output-data.abook
             List<Entry> readEntries = binaryService.readEntries(IN_FILE_NAME);
             logger.info("\nRead {} entries from " + IN_FILE_NAME, readEntries.size());
