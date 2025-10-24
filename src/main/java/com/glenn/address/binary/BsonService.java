@@ -222,6 +222,9 @@ public class BsonService implements BinaryService {
      */
     public static void main(String[] args) {
         String testFile = "export-data.json";
+        if(args.length > 0) {
+            testFile = args[0];
+        }
         String outputFile = OUT_FILE_NAME;
 
         try {

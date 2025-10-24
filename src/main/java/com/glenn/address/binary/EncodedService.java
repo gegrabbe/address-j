@@ -100,7 +100,7 @@ public class EncodedService implements BinaryService {
         if (value == null) {
             return null;
         }
-        return encode64(rot(value));
+        return rot(encode64(value));
     }
 
     /**
@@ -114,7 +114,7 @@ public class EncodedService implements BinaryService {
         if (value == null) {
             return null;
         }
-        return derot(decode64(value));
+        return decode64(derot(value));
     }
 
     /**
@@ -283,6 +283,9 @@ public class EncodedService implements BinaryService {
      */
     public static void main(String[] args) {
         String testFile = "export-data.json";
+        if(args.length > 0) {
+            testFile = args[0];
+        }
         String outputFile = OUT_FILE_NAME;
 
         try {
@@ -310,9 +313,9 @@ public class EncodedService implements BinaryService {
                 logger.info("✓ Verification successful: Entries match between output and input files");
                 logger.info("Read in data: {}", (readEntries.toString()).substring(0,200));
             } else {
-                logger.info("✗ Verification failed: Entries do not match");
-                logger.info("  Written entries: {}", entries.size());
-                logger.info("  Read entries: {}", readEntries.size());
+                logger.error("✗ Verification failed: Entries do not match");
+                logger.error("  Written entries: {}", entries.size());
+                logger.error("  Read entries: {}", readEntries.size());
             }
 
         } catch (Exception e) {
