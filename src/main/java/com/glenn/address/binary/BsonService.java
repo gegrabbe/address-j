@@ -1,17 +1,8 @@
 package com.glenn.address.binary;
 
-import com.glenn.address.domain.Address;
-import com.glenn.address.domain.Entry;
-import com.glenn.address.domain.Gender;
-import com.glenn.address.domain.MaritalStatus;
-import com.glenn.address.domain.Person;
+import com.glenn.address.domain.*;
 import com.google.gson.Gson;
-import org.bson.BsonBinaryReader;
-import org.bson.BsonBinaryWriter;
-import org.bson.BsonDocument;
-import org.bson.BsonInt32;
-import org.bson.BsonNull;
-import org.bson.BsonString;
+import org.bson.*;
 import org.bson.codecs.BsonDocumentCodec;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.EncoderContext;
@@ -19,7 +10,6 @@ import org.bson.io.BasicOutputBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -34,7 +24,6 @@ import java.util.List;
 public class BsonService implements BinaryService {
     private static final Logger logger = LoggerFactory.getLogger(BsonService.class);
     private static final String OUT_FILE_NAME = "output-data.bson";
-    private static final String IN_FILE_NAME = "input-data.bson";
 
     /**
      * Write Entry objects to BSON binary format
@@ -182,28 +171,28 @@ public class BsonService implements BinaryService {
         String maritalStatusStr = getBsonString(personDoc, "maritalStatus");
 
         Person person = new Person(
-            getBsonString(personDoc, "firstName"),
-            getBsonString(personDoc, "lastName"),
-            personDoc.getInt32("age").getValue(),
-            genderStr != null && !genderStr.isEmpty() ? Gender.valueOf(genderStr) : null,
-            maritalStatusStr != null && !maritalStatusStr.isEmpty() ? MaritalStatus.valueOf(maritalStatusStr) : null
+                getBsonString(personDoc, "firstName"),
+                getBsonString(personDoc, "lastName"),
+                personDoc.getInt32("age").getValue(),
+                genderStr != null && !genderStr.isEmpty() ? Gender.valueOf(genderStr) : null,
+                maritalStatusStr != null && !maritalStatusStr.isEmpty() ? MaritalStatus.valueOf(maritalStatusStr) : null
         );
 
         BsonDocument addressDoc = document.getDocument("address");
         Address address = new Address(
-            getBsonString(addressDoc, "street"),
-            getBsonString(addressDoc, "city"),
-            getBsonString(addressDoc, "state"),
-            getBsonString(addressDoc, "zip"),
-            getBsonString(addressDoc, "email"),
-            getBsonString(addressDoc, "phone")
+                getBsonString(addressDoc, "street"),
+                getBsonString(addressDoc, "city"),
+                getBsonString(addressDoc, "state"),
+                getBsonString(addressDoc, "zip"),
+                getBsonString(addressDoc, "email"),
+                getBsonString(addressDoc, "phone")
         );
 
         return new Entry(
-            document.getInt32("entryId").getValue(),
-            person,
-            address,
-            getBsonString(document, "notes")
+                document.getInt32("entryId").getValue(),
+                person,
+                address,
+                getBsonString(document, "notes")
         );
     }
 
@@ -217,48 +206,4 @@ public class BsonService implements BinaryService {
         return null;
     }
 
-    /**
-     * Main method: Read JSON file and write to BSON binary format
-     */
-    public static void main(String[] args) {
-        String testFile = "export-data.json";
-        if(args.length > 0) {
-            testFile = args[0];
-        }
-        String outputFile = OUT_FILE_NAME;
-
-        try {
-            // Read entries from JSON file
-            com.glenn.address.mongo.FileDataUtil fileUtil = new com.glenn.address.mongo.FileDataUtil(testFile);
-            List<Entry> entries = fileUtil.readData();
-
-            if (entries == null || entries.isEmpty()) {
-                logger.error("No entries found in {}", testFile);
-                System.exit(1);
-            }
-
-            // Write entries to BSON binary file
-            BinaryService binaryService = new BsonService();
-            binaryService.writeEntries(entries, outputFile);
-
-            logger.info("Successfully converted {} entries from JSON to BSON binary format", entries.size());
-            logger.info("Output file: {}", new File(outputFile).getAbsolutePath());
-
-            // Verify by reading input-data.bson and comparing to entries written to output-data.bson
-            List<Entry> readEntries = binaryService.readEntries(IN_FILE_NAME);
-            logger.info("\nRead {} entries from " + IN_FILE_NAME, readEntries.size());
-
-            if (entries.equals(readEntries)) {
-                logger.info("✓ Verification successful: Entries match between output and input files");
-            } else {
-                logger.info("✗ Verification failed: Entries do not match");
-                logger.info("  Written entries: {}", entries.size());
-                logger.info("  Read entries: {}", readEntries.size());
-            }
-
-        } catch (Exception e) {
-            logger.error("Error during BSON conversion: ", e);
-            System.exit(1);
-        }
-    }
 }

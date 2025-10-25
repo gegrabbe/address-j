@@ -1,25 +1,14 @@
 package com.glenn.address.binary;
 
-import com.glenn.address.domain.Address;
-import com.glenn.address.domain.Entry;
-import com.glenn.address.domain.Gender;
-import com.glenn.address.domain.MaritalStatus;
-import com.glenn.address.domain.Person;
-import com.glenn.address.mongo.FileDataUtil;
+import com.glenn.address.domain.*;
 import com.google.gson.Gson;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.DatumReader;
-import org.apache.avro.io.DatumWriter;
-import org.apache.avro.io.Decoder;
-import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.io.Encoder;
-import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.io.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -35,7 +24,6 @@ import java.util.List;
 public class AvroService implements BinaryService {
     private static final Logger logger = LoggerFactory.getLogger(AvroService.class);
     private static final String OUT_FILE_NAME = "output-data.avro";
-    private static final String IN_FILE_NAME = "input-data.avro";
     private static final String SCHEMA_FILE = "entry-schema.avsc";
 
     private final Schema schema;
@@ -181,28 +169,28 @@ public class AvroService implements BinaryService {
         String maritalStatusStr = toString(personRecord.get("maritalStatus"));
 
         Person person = new Person(
-            toString(personRecord.get("firstName")),
-            toString(personRecord.get("lastName")),
-            (Integer) personRecord.get("age"),
-            genderStr != null ? Gender.valueOf(genderStr) : null,
-            maritalStatusStr != null ? MaritalStatus.valueOf(maritalStatusStr) : null
+                toString(personRecord.get("firstName")),
+                toString(personRecord.get("lastName")),
+                (Integer) personRecord.get("age"),
+                genderStr != null ? Gender.valueOf(genderStr) : null,
+                maritalStatusStr != null ? MaritalStatus.valueOf(maritalStatusStr) : null
         );
 
         GenericRecord addressRecord = (GenericRecord) record.get("address");
         Address address = new Address(
-            toString(addressRecord.get("street")),
-            toString(addressRecord.get("city")),
-            toString(addressRecord.get("state")),
-            toString(addressRecord.get("zip")),
-            toString(addressRecord.get("email")),
-            toString(addressRecord.get("phone"))
+                toString(addressRecord.get("street")),
+                toString(addressRecord.get("city")),
+                toString(addressRecord.get("state")),
+                toString(addressRecord.get("zip")),
+                toString(addressRecord.get("email")),
+                toString(addressRecord.get("phone"))
         );
 
         return new Entry(
-            (Integer) record.get("entryId"),
-            person,
-            address,
-            toString(record.get("notes"))
+                (Integer) record.get("entryId"),
+                person,
+                address,
+                toString(record.get("notes"))
         );
     }
 
@@ -214,50 +202,5 @@ public class AvroService implements BinaryService {
             return null;
         }
         return value.toString();
-    }
-
-    /**
-     * Main method: Read JSON file and write to Avro binary format
-     */
-    public static void main(String[] args) {
-        String testFile = "export-data.json";
-        if(args.length > 0) {
-            testFile = args[0];
-        }
-        String outputFile = OUT_FILE_NAME;
-
-        try {
-            // Read entries from JSON file
-            FileDataUtil fileUtil = new FileDataUtil(testFile);
-            List<Entry> entries = fileUtil.readData();
-
-            if (entries == null || entries.isEmpty()) {
-                logger.error("No entries found in {}", testFile);
-                System.exit(1);
-            }
-
-            // Write entries to Avro binary file
-            BinaryService binaryService = new AvroService();
-            binaryService.writeEntries(entries, outputFile);
-
-            logger.info("Successfully converted {} entries from JSON to Avro binary format", entries.size());
-            logger.info("Output file: {}", new File(outputFile).getAbsolutePath());
-
-            // Verify by reading input-data.bin and comparing to entries written to output-data.bin
-            List<Entry> readEntries = binaryService.readEntries(IN_FILE_NAME);
-            logger.info("\nRead {} entries from " + IN_FILE_NAME, readEntries.size());
-
-            if (entries.equals(readEntries)) {
-                logger.info("✓ Verification successful: Entries match between output and input files");
-            } else {
-                logger.info("✗ Verification failed: Entries do not match");
-                logger.info("  Written entries: {}", entries.size());
-                logger.info("  Read entries: {}", readEntries.size());
-            }
-
-        } catch (Exception e) {
-            logger.error("Error during Avro conversion: ", e);
-            System.exit(1);
-        }
     }
 }

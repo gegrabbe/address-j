@@ -1,15 +1,12 @@
 package com.glenn.address.mongo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.glenn.address.domain.Entry;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -18,25 +15,29 @@ import java.util.List;
 
 /**
  * Utility class for reading and writing address book entries to/from JSON files.
- * Provides serialization and deserialization of Entry objects using Gson with pretty printing.
+ * Provides serialization and deserialization of Entry objects using Jackson with pretty printing.
  */
 public class FileDataUtil {
     private static final Logger logger = LoggerFactory.getLogger(FileDataUtil.class);
 
     private final String fileName;
+    private final ObjectMapper objectMapper;
 
     public FileDataUtil(String fileName) {
         this.fileName = fileName;
+        this.objectMapper = createObjectMapper();
+    }
+
+    private static ObjectMapper createObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);  // pretty print to file
+        return mapper;
     }
 
     public void writeData(List<Entry> entries) {
-        // Create Gson instance with pretty printing
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        String json = gson.toJson(entries);
-
-        // Write JSON to file
-        try (FileWriter writer = new FileWriter(fileName)) {
-            writer.write(json);
+        try {
+            String json = objectMapper.writeValueAsString(entries);
+            Files.writeString(Paths.get(fileName), json);
             logger.info("Successfully wrote {} entries to input-data.json", entries.size());
             logger.debug("JSON content: \n{}", StringUtils.substring(json, 0, 100));
         } catch (IOException e) {
@@ -46,10 +47,9 @@ public class FileDataUtil {
     }
 
     public List<Entry> readData() {
-        Gson gson = new Gson();
-
-        try (FileReader reader = new FileReader(fileName)) {
-            Entry[] entriesArray = gson.fromJson(reader, Entry[].class);
+        try {
+            String json = Files.readString(Paths.get(fileName));
+            Entry[] entriesArray = objectMapper.readValue(json, Entry[].class);
             List<Entry> entries = Arrays.asList(entriesArray);
             logger.info("Successfully read {} entries from {}", entries.size(), fileName);
             logger.debug("Read entries: {}", StringUtils.substring(entries.toString(), 0, 100));

@@ -1,25 +1,14 @@
 package com.glenn.address.binary;
 
-import com.glenn.address.domain.Address;
-import com.glenn.address.domain.Entry;
-import com.glenn.address.domain.Gender;
-import com.glenn.address.domain.MaritalStatus;
-import com.glenn.address.domain.Person;
-import com.glenn.address.mongo.FileDataUtil;
+import com.glenn.address.domain.*;
 import com.google.gson.Gson;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.avro.io.DatumReader;
-import org.apache.avro.io.DatumWriter;
-import org.apache.avro.io.Decoder;
-import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.io.Encoder;
-import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.io.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,7 +32,6 @@ import java.util.List;
 public class EncodedService implements BinaryService {
     private static final Logger logger = LoggerFactory.getLogger(EncodedService.class);
     private static final String OUT_FILE_NAME = "output-data.addr";
-    private static final String IN_FILE_NAME = "input-data.addr";
     private static final String SCHEMA_FILE = "entry-schema.avsc";
 
     private final Schema schema;
@@ -243,28 +231,28 @@ public class EncodedService implements BinaryService {
         String maritalStatusStr = decodeString(toString(personRecord.get("maritalStatus")));
 
         Person person = new Person(
-            decodeString(toString(personRecord.get("firstName"))),
-            decodeString(toString(personRecord.get("lastName"))),
-            (Integer) personRecord.get("age"),
-            genderStr != null ? Gender.valueOf(genderStr) : null,
-            maritalStatusStr != null ? MaritalStatus.valueOf(maritalStatusStr) : null
+                decodeString(toString(personRecord.get("firstName"))),
+                decodeString(toString(personRecord.get("lastName"))),
+                (Integer) personRecord.get("age"),
+                genderStr != null ? Gender.valueOf(genderStr) : null,
+                maritalStatusStr != null ? MaritalStatus.valueOf(maritalStatusStr) : null
         );
 
         GenericRecord addressRecord = (GenericRecord) record.get("address");
         Address address = new Address(
-            decodeString(toString(addressRecord.get("street"))),
-            decodeString(toString(addressRecord.get("city"))),
-            decodeString(toString(addressRecord.get("state"))),
-            decodeString(toString(addressRecord.get("zip"))),
-            decodeString(toString(addressRecord.get("email"))),
-            decodeString(toString(addressRecord.get("phone")))
+                decodeString(toString(addressRecord.get("street"))),
+                decodeString(toString(addressRecord.get("city"))),
+                decodeString(toString(addressRecord.get("state"))),
+                decodeString(toString(addressRecord.get("zip"))),
+                decodeString(toString(addressRecord.get("email"))),
+                decodeString(toString(addressRecord.get("phone")))
         );
 
         return new Entry(
-            (Integer) record.get("entryId"),
-            person,
-            address,
-            decodeString(toString(record.get("notes")))
+                (Integer) record.get("entryId"),
+                person,
+                address,
+                decodeString(toString(record.get("notes")))
         );
     }
 
@@ -278,60 +266,4 @@ public class EncodedService implements BinaryService {
         return value.toString();
     }
 
-    /**
-     * Main method: Read JSON file and write to Avro encoded binary format
-     */
-    public static void main(String[] args) {
-        String testFile = "export-data.json";
-        if(args.length > 0) {
-            testFile = args[0];
-        }
-        String outputFile = OUT_FILE_NAME;
-
-        try {
-            // Read entries from JSON file
-            FileDataUtil fileUtil = new FileDataUtil(testFile);
-            List<Entry> entries = fileUtil.readData();
-
-            if (entries == null || entries.isEmpty()) {
-                logger.error("No entries found in {}", testFile);
-                System.exit(1);
-            }
-
-            // Write entries to Avro encoded file
-            BinaryService binaryService = new EncodedService();
-            binaryService.writeEntries(entries, outputFile);
-
-            logger.info("Successfully converted {} entries from JSON to Avro encoded format", entries.size());
-            logger.info("Output file: {}", new File(outputFile).getAbsolutePath());
-
-            // Delete input file and copy output to input for next run
-            FileDataUtil fileUtil2 = new FileDataUtil(IN_FILE_NAME);
-            if (fileUtil2.delete(IN_FILE_NAME)) {
-                logger.info("Deleted old input file: {}", IN_FILE_NAME);
-            }
-            if (fileUtil2.copy(outputFile, IN_FILE_NAME)) {
-                logger.info("Copied output file to input file: {} -> {}", outputFile, IN_FILE_NAME);
-            } else {
-                throw new RuntimeException("copy failed. cannot proceed");
-            }
-
-            // Verify by reading input-data.abook and comparing to entries written to output-data.abook
-            List<Entry> readEntries = binaryService.readEntries(IN_FILE_NAME);
-            logger.info("\nRead {} entries from " + IN_FILE_NAME, readEntries.size());
-
-            if (entries.equals(readEntries)) {
-                logger.info("✓ Verification successful: Entries match between output and input files");
-                logger.info("Read in data: {}", (readEntries.toString()).substring(0,200));
-            } else {
-                logger.error("✗ Verification failed: Entries do not match");
-                logger.error("  Written entries: {}", entries.size());
-                logger.error("  Read entries: {}", readEntries.size());
-            }
-
-        } catch (Exception e) {
-            logger.error("Error during Avro encoded conversion: ", e);
-            System.exit(1);
-        }
-    }
 }

@@ -1,7 +1,7 @@
 package com.glenn.address.mongo;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.glenn.address.domain.Entry;
-import com.google.gson.Gson;
 import com.mongodb.MongoException;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -34,11 +34,10 @@ public class MongoService implements AutoCloseable {
     private MongoClient mongoClient;
     private MongoDatabase database;
     private MongoCollection<Document> collection;
-    private final Gson gson;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private boolean initialized = false;
 
     public MongoService() {
-        this.gson = new Gson();
     }
 
     /**
@@ -76,7 +75,7 @@ public class MongoService implements AutoCloseable {
         try {
             List<Document> documents = new ArrayList<>();
             for (Entry entry : updates) {
-                String json = gson.toJson(entry);
+                String json = objectMapper.writeValueAsString(entry);
                 Document doc = Document.parse(json);
                 documents.add(doc);
             }
@@ -85,22 +84,22 @@ public class MongoService implements AutoCloseable {
                 collection.insertMany(documents);
                 logger.debug("Successfully saved {} entries to MongoDB", documents.size());
             }
-        } catch (MongoException e) {
+        } catch (Exception e) {
             logger.error("Failed to save entries to MongoDB", e);
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 
     public void saveEntryToDatabase(Entry update) {
         ensureInitialized();
         try {
-            String json = gson.toJson(update);
+            String json = objectMapper.writeValueAsString(update);
             Document doc = Document.parse(json);
             collection.insertOne(doc);
             logger.debug("Successfully saved 1 entry to MongoDB: {}", update.entryId());
-        } catch (MongoException e) {
+        } catch (Exception e) {
             logger.error("Failed to save entry to MongoDB", e);
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 
@@ -123,13 +122,13 @@ public class MongoService implements AutoCloseable {
             for (Document doc : collection.find()) {
                 doc.remove("_id");  // Remove MongoDB's _id field
                 String json = doc.toJson();
-                Entry entry = gson.fromJson(json, Entry.class);
+                Entry entry = objectMapper.readValue(json, Entry.class);
                 entries.add(entry);
             }
 
             logger.debug("Successfully read {} entries from MongoDB", entries.size());
             return entries;
-        } catch (MongoException e) {
+        } catch (Exception e) {
             logger.error("Failed to read entries from MongoDB", e);
             return List.of();
         }
@@ -143,13 +142,13 @@ public class MongoService implements AutoCloseable {
             for (Document doc : collection.find(eq("entryId", entryId))) {
                 doc.remove("_id");
                 String json = doc.toJson();
-                Entry entry = gson.fromJson(json, Entry.class);
+                Entry entry = objectMapper.readValue(json, Entry.class);
                 entries.add(entry);
             }
 
             logger.debug("Found {} entries with entryId '{}'", entries.size(), entryId);
             return entries;
-        } catch (MongoException e) {
+        } catch (Exception e) {
             logger.error("Failed to search by entryId", e);
             return List.of();
         }
@@ -163,13 +162,13 @@ public class MongoService implements AutoCloseable {
             for (Document doc : collection.find(regex("person.lastName", "^" + lastName, "i"))) {
                 doc.remove("_id");
                 String json = doc.toJson();
-                Entry entry = gson.fromJson(json, Entry.class);
+                Entry entry = objectMapper.readValue(json, Entry.class);
                 entries.add(entry);
             }
 
             logger.debug("Found {} entries with lastName '{}'", entries.size(), lastName);
             return entries;
-        } catch (MongoException e) {
+        } catch (Exception e) {
             logger.error("Failed to search by lastName", e);
             return List.of();
         }
@@ -185,14 +184,14 @@ public class MongoService implements AutoCloseable {
                     regex("person.lastName", "^" + lastName, "i")))) {
                 doc.remove("_id");
                 String json = doc.toJson();
-                Entry entry = gson.fromJson(json, Entry.class);
+                Entry entry = objectMapper.readValue(json, Entry.class);
                 entries.add(entry);
             }
 
             logger.debug("Found {} entries with firstName '{}' and lastName '{}'",
                     entries.size(), firstName, lastName);
             return entries;
-        } catch (MongoException e) {
+        } catch (Exception e) {
             logger.error("Failed to search by firstName and lastName", e);
             return List.of();
         }

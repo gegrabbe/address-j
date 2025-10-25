@@ -1,7 +1,6 @@
 package com.glenn.address.binary;
 
 import com.glenn.address.domain.Entry;
-import com.glenn.address.mongo.FileDataUtil;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +20,6 @@ import java.util.zip.GZIPOutputStream;
 public class GzipService implements BinaryService {
     private static final Logger logger = LoggerFactory.getLogger(GzipService.class);
     private static final String OUT_FILE_NAME = "output-data.gz";
-    private static final String IN_FILE_NAME = "input-data.gz";
 
     /**
      * Write Entry objects to gzip-compressed JSON format
@@ -98,48 +96,4 @@ public class GzipService implements BinaryService {
         return entries;
     }
 
-    /**
-     * Main method: Read JSON file and write to gzip-compressed format
-     */
-    public static void main(String[] args) {
-        String testFile = "export-data.json";
-        if(args.length > 0) {
-            testFile = args[0];
-        }
-        String outputFile = OUT_FILE_NAME;
-
-        try {
-            // Read entries from JSON file
-            FileDataUtil fileUtil = new FileDataUtil(testFile);
-            List<Entry> entries = fileUtil.readData();
-
-            if (entries == null || entries.isEmpty()) {
-                logger.error("No entries found in {}", testFile);
-                System.exit(1);
-            }
-
-            // Write entries to gzip file
-            BinaryService binaryService = new GzipService();
-            binaryService.writeEntries(entries, outputFile);
-
-            logger.info("Successfully converted {} entries from JSON to gzip format", entries.size());
-            logger.info("Output file: {}", new File(outputFile).getAbsolutePath());
-
-            // Verify by reading input-data.gz and comparing to entries written to output-data.gz
-            List<Entry> readEntries = binaryService.readEntries(IN_FILE_NAME);
-            logger.info("\nRead {} entries from " + IN_FILE_NAME, readEntries.size());
-
-            if (entries.equals(readEntries)) {
-                logger.info("✓ Verification successful: Entries match between output and input files");
-            } else {
-                logger.info("✗ Verification failed: Entries do not match");
-                logger.info("  Written entries: {}", entries.size());
-                logger.info("  Read entries: {}", readEntries.size());
-            }
-
-        } catch (Exception e) {
-            logger.error("Error during gzip conversion: ", e);
-            System.exit(1);
-        }
-    }
 }
