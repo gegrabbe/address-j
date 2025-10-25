@@ -1,0 +1,40 @@
+[
+  {
+    "entryId": 1,
+    "person": {
+      "firstName": "Glenn",
+      "lastName": "Benoit",
+      "age": 60,
+      "gender": "MALE",
+      "maritalStatus": "MARRIED"
+    },
+    "address": {
+      "street": "301 West Main Street",
+      "city": "Franklin",
+      "state": "TN",
+      "zip": "37069",
+      "email": "jjjjjj@yeet.com",
+      "phone": "8888887777"
+    },
+    "notes": "My second entry.  Yeet."
+  },
+  {
+    "entryId": 2,
+    "person": {
+      "firstName": "Joy",
+      "lastName": "Benoit",
+      "age": 58,
+      "gender": "FEMALE",
+      "maritalStatus": "MARRIED"
+    },
+    "address": {
+      "street": "301 West Main Street",
+      "city": "Franklin",
+      "state": "TN",
+      "zip": "37069",
+      "email": "ggggg@yeet.com",
+      "phone": "6155557777"
+    },
+    "notes": "Joy\u0027s second entry.  Yeeha"
+  }
+]
