@@ -15,7 +15,9 @@ import java.util.stream.Stream;
 
 public class TestBase {
     protected static final Logger logger = LoggerFactory.getLogger(TestBase.class);
-    protected static final String TESTDATA_FILE = "test-data.json";
+    protected String testDataFile = "test-data.json";
+    protected String outputFilePrefix = "test-binary-output";
+    protected String inputFilePrefix = "test-binary-input";
 
     protected static final List<Parameters> PARAMETERS_LIST = List.of(
             new Parameters(new AvroService(), "Avro", "avro"),
@@ -32,7 +34,7 @@ public class TestBase {
 
     @BeforeEach
     void init() {
-        File testDataFile = new File(TESTDATA_FILE);
+        File testDataFile = new File(this.testDataFile);
         if (!testDataFile.exists()) {
             throw new IllegalStateException(
                     String.format("""
@@ -41,7 +43,7 @@ public class TestBase {
                                     Please provide the test file before running the test.
                                     You can use the GenerateData test to create the file.
                                     """
-                            , TESTDATA_FILE)
+                            , this.testDataFile)
             );
         }
         testEntries = readTestData();
@@ -51,8 +53,8 @@ public class TestBase {
     void cleanup() {
         // Clean up all test output and input files
         for (Parameters tester : PARAMETERS_LIST) {
-            deleteFile(tester.outputFile());
-            deleteFile(tester.inputFile());
+            deleteFile(tester.outputFile(outputFilePrefix));
+            deleteFile(tester.inputFile(inputFilePrefix));
         }
         logger.info("Test cleanup completed");
     }
@@ -71,18 +73,18 @@ public class TestBase {
 
     protected List<Entry> readTestData() {
         // Read entries from JSON file
-        FileDataUtil fileUtil = new FileDataUtil(TestBase.TESTDATA_FILE);
+        FileDataUtil fileUtil = new FileDataUtil(this.testDataFile);
         List<Entry> entries = fileUtil.readData();
 
         if (entries == null || entries.isEmpty()) {
-            logger.error("No entries read from {}", TestBase.TESTDATA_FILE);
+            logger.error("No entries read from {}", this.testDataFile);
             return List.of();
         }
         return entries;
     }
 
     protected void writeOutput(List<Entry> entries, Parameters param) {
-        String fileName = param.outputFile();
+        String fileName = param.outputFile(outputFilePrefix);
         BinaryService binaryService = param.tester();
         binaryService.writeEntries(entries, fileName);
         logger.info("Successfully converted {} entries from JSON to {} binary format", entries.size(), param.name());
@@ -91,8 +93,8 @@ public class TestBase {
 
     protected void copyOutputToInput(Parameters param) {
         // Delete input file and copy output to input for next run
-        String outputFile = param.outputFile();
-        String inputFile = param.inputFile();
+        String outputFile = param.outputFile(this.outputFilePrefix);
+        String inputFile = param.inputFile(this.inputFilePrefix);
         FileDataUtil fileUtil2 = new FileDataUtil(inputFile);
         if (fileUtil2.delete(inputFile)) {
             logger.info("Deleted old input file: {}", inputFile);
@@ -105,7 +107,7 @@ public class TestBase {
     }
 
     protected List<Entry> readBinaryEntries(Parameters param) {
-        String inputFile = param.inputFile();
+        String inputFile = param.inputFile(this.inputFilePrefix);
         List<Entry> entries = param.tester().readEntries(inputFile);
         logger.info("Read {} entries from {}", entries.size(), inputFile);
         return entries;

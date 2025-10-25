@@ -28,7 +28,7 @@ public class BinaryValidTest extends TestBase {
         logger.info("Testing empty entries with {}", param.name());
         List<Entry> emptyEntries = List.of();
 
-        String outputFile = param.outputFile();
+        String outputFile = param.outputFile(outputFilePrefix);
         param.tester().writeEntries(emptyEntries, outputFile);
 
         List<Entry> readEntries = param.tester().readEntries(outputFile);
@@ -42,7 +42,7 @@ public class BinaryValidTest extends TestBase {
     @MethodSource("binaryServiceProvider")
     void testMissingInputFile(Parameters param) {
         logger.info("Testing missing input file with {}", param.name());
-        String missingFile = "nonexistent-" + param.inputFile();
+        String missingFile = "nonexistent-" + param.inputFile(inputFilePrefix);
 
         Exception exception = Assertions.assertThrows(
                 RuntimeException.class,
@@ -60,7 +60,7 @@ public class BinaryValidTest extends TestBase {
         if (!singleEntry.isEmpty()) {
             List<Entry> entries = List.of(singleEntry.getFirst());
 
-            String outputFile = param.outputFile();
+            String outputFile = param.outputFile(outputFilePrefix);
             param.tester().writeEntries(entries, outputFile);
             copyOutputToInput(param);
             List<Entry> readEntries = readBinaryEntries(param);
