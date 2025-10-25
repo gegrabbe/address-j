@@ -16,6 +16,7 @@ import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,8 +40,9 @@ public class PrintMaster {
     private static final DeviceRgb LIGHT_BG = new DeviceRgb(240, 240, 240); // Light gray background
 
     @SuppressWarnings("unused")
-    public PrintMaster() {
-        this.mongoService = new MongoService("input-data.json");
+    @Autowired
+    public PrintMaster(MongoService mongoService) {
+        this.mongoService = mongoService;
     }
 
     @GetMapping(produces = MediaType.APPLICATION_PDF_VALUE)

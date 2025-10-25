@@ -10,6 +10,7 @@ import com.mongodb.MongoWriteException;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,8 +33,9 @@ public class AddressApi {
     private final MongoService mongoService;
 
     @SuppressWarnings("unused")
-    public AddressApi() {
-        this.mongoService = new MongoService("input-data.json");
+    @Autowired
+    public AddressApi(MongoService mongoService) {
+        this.mongoService = mongoService;
     }
 
     public static List<Entry> sortById(List<Entry> entries) {

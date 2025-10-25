@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,28 +25,41 @@ import static com.mongodb.client.model.Filters.regex;
  * Provides CRUD operations and search functionality for entries stored in MongoDB.
  * Implements AutoCloseable for proper resource management of the MongoClient connection.
  */
+@Service
 public class MongoService implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(MongoService.class);
     private static final String FILE_NAME = "input-data.json";
 
-    private final String fileName;
-    private final MongoClient mongoClient;
-    private final MongoDatabase database;
-    private final MongoCollection<Document> collection;
+    private String fileName;
+    private MongoClient mongoClient;
+    private MongoDatabase database;
+    private MongoCollection<Document> collection;
     private final Gson gson;
+    private boolean initialized = false;
 
-    public MongoService(String fileName) {
-        this.fileName = fileName;
+    public MongoService() {
+        this.gson = new Gson();
+    }
+
+    /**
+     * Lazily initializes the MongoDB connection on first use.
+     * Ensures the connection is only established when actually needed.
+     */
+    private synchronized void ensureInitialized() {
+        if (initialized) {
+            return;
+        }
+
         DatabaseConfig config = new DatabaseConfig();
 
         try {
             this.mongoClient = MongoClients.create(config.getConnectionString());
             this.database = mongoClient.getDatabase(config.getDatabase());
             this.collection = database.getCollection(config.getCollection());
-            this.gson = new Gson();
 
             logger.info("Connected to MongoDB at {}/{}/{}",
                     config.getConnectionString(), config.getDatabase(), config.getCollection());
+            initialized = true;
         } catch (MongoException e) {
             logger.error("Failed to connect to MongoDB", e);
             throw new RuntimeException("Failed to connect to MongoDB", e);
@@ -58,6 +72,7 @@ public class MongoService implements AutoCloseable {
     }
 
     public void saveToDatabase(List<Entry> updates) {
+        ensureInitialized();
         try {
             List<Document> documents = new ArrayList<>();
             for (Entry entry : updates) {
@@ -77,6 +92,7 @@ public class MongoService implements AutoCloseable {
     }
 
     public void saveEntryToDatabase(Entry update) {
+        ensureInitialized();
         try {
             String json = gson.toJson(update);
             Document doc = Document.parse(json);
@@ -89,6 +105,7 @@ public class MongoService implements AutoCloseable {
     }
 
     public void deleteEntryById(Integer entryId) {
+        ensureInitialized();
         try {
             var result = collection.deleteMany(eq("entryId", entryId));
             logger.debug("Successfully deleted {} entries with entryId '{}'", result.getDeletedCount(), entryId);
@@ -99,6 +116,7 @@ public class MongoService implements AutoCloseable {
     }
 
     public List<Entry> readFromDatabase() {
+        ensureInitialized();
         try {
             List<Entry> entries = new ArrayList<>();
 
@@ -118,6 +136,7 @@ public class MongoService implements AutoCloseable {
     }
 
     public List<Entry> searchByEntryId(Integer entryId) {
+        ensureInitialized();
         try {
             List<Entry> entries = new ArrayList<>();
 
@@ -137,6 +156,7 @@ public class MongoService implements AutoCloseable {
     }
 
     public List<Entry> searchByLastName(String lastName) {
+        ensureInitialized();
         try {
             List<Entry> entries = new ArrayList<>();
 
@@ -156,6 +176,7 @@ public class MongoService implements AutoCloseable {
     }
 
     public List<Entry> searchByFirstAndLastName(String firstName, String lastName) {
+        ensureInitialized();
         try {
             List<Entry> entries = new ArrayList<>();
 
@@ -185,10 +206,19 @@ public class MongoService implements AutoCloseable {
         }
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
     public static void main(String[] args) {
         logger.info("### MongoService test ###");
 
-        try (MongoService msTest = new MongoService(FILE_NAME)) {
+        try (MongoService msTest = new MongoService()) {
+            msTest.setFileName(FILE_NAME);
             List<Entry> updates = msTest.getTestData();
             msTest.saveToDatabase(updates);
             updates = msTest.readFromDatabase();
