@@ -19,11 +19,20 @@
         </div>
 
         <div class="controls">
+            <div>
             <button id="listAllBtn" class="btn btn-primary">List All Entries</button>
             <button id="addNewBtn" class="btn btn-success">Add New Entry</button>
-            <button id="printBtn" class="btn btn-secondary">Print</button>
-            <button id="exportBtn" class="btn btn-secondary">Export</button>
-            <button id="importBtn" class="btn btn-secondary">Import</button>
+            <button id="printBtn" class="btn btn-success">Print</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div>
+            <button id="exportBtn" class="btn btn-secondary">Export Text</button>
+            <button id="importBtn" class="btn btn-secondary">Import Text</button>
+            <button id="exportBinaryBtn" class="btn btn-secondary">Export Binary</button>
+            <button id="importBinaryBtn" class="btn btn-secondary">Import Binary</button>
+            </div>
         </div>
 
         <div id="searchSection" class="section">
@@ -32,19 +41,19 @@
                 <div class="search-form">
                     <label for="searchEntryId">Search by Entry ID:</label>
                     <input type="text" id="searchEntryId" placeholder="Enter entry ID">
-                    <button id="searchEntryIdBtn" class="btn btn-secondary">Search</button>
+                    <button id="searchEntryIdBtn" class="btn btn-primary">Search</button>
                 </div>
                 <div class="search-form">
                     <label for="searchLastName">Search by Last Name:</label>
                     <input type="text" id="searchLastName" placeholder="Enter last name">
-                    <button id="searchLastNameBtn" class="btn btn-secondary">Search</button>
+                    <button id="searchLastNameBtn" class="btn btn-primary">Search</button>
                 </div>
                 <div class="search-form">
                     <label for="searchFirstName">Search by First and Last Name:</label>
                     <input type="text" id="searchFirstName" placeholder="Enter first name">
                     <label for="searchFullLastName" style="display:none;">Last Name:</label>
                     <input type="text" id="searchFullLastName" placeholder="Enter last name">
-                    <button id="searchFullNameBtn" class="btn btn-secondary">Search</button>
+                    <button id="searchFullNameBtn" class="btn btn-primary">Search</button>
                 </div>
             </div>
         </div>

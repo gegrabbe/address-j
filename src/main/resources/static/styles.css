@@ -50,9 +50,17 @@ h3 {
 
 .controls {
     display: flex;
+    flex-wrap: wrap;
     gap: 15px;
     justify-content: center;
     margin-bottom: 30px;
+}
+
+.controls > div {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .btn {

@@ -1,5 +1,6 @@
 package com.glenn.address.web;
 
+import com.glenn.address.binary.EncodedService;
 import com.glenn.address.domain.CompareById;
 import com.glenn.address.domain.CompareByLastName;
 import com.glenn.address.domain.Entry;
@@ -30,6 +31,8 @@ public class AddressApi {
     public static final String DATABASE_ERROR = "Database Error";
     public static final String EXPORT_DATA_FILE = "export-data.json";
     public static final String IMPORT_DATA_FILE = "import-data.json";
+    public static final String EXPORT_BINARY_FILE = "export-data.addr";
+    public static final String IMPORT_BINARY_FILE = "import-data.addr";
     private final MongoService mongoService;
 
     @SuppressWarnings("unused")
@@ -222,6 +225,49 @@ public class AddressApi {
         }
     }
 
+    @PostMapping("/exportBinary")
+    @SuppressWarnings("unused")
+    public ResponseEntity<?> exportBinary(@RequestParam(required = false, defaultValue = EXPORT_BINARY_FILE) String fileName) {
+        logger.debug("#### exportBinary ####");
+        try {
+            ResponseEntity<?> responseEntity = fileNameCheck(fileName, ".addr", false);
+            if (responseEntity != null) {
+                return responseEntity;
+            }
+            EncodedService encodedService = new EncodedService();
+            encodedService.writeEntries(sortById(mongoService.readFromDatabase()), fileName);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } catch (Exception e) {
+            logger.error("Failed to export binary - unexpected error", e);
+            ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    @PostMapping("/importBinary")
+    @SuppressWarnings("unused")
+    public ResponseEntity<?> importBinary(@RequestParam(required = false, defaultValue = IMPORT_BINARY_FILE) String fileName) {
+        logger.debug("#### importBinary ####");
+        try {
+            ResponseEntity<?> responseEntity = fileNameCheck(fileName, ".addr", true);
+            if (responseEntity != null) {
+                return responseEntity;
+            }
+            EncodedService encodedService = new EncodedService();
+            mongoService.saveToDatabase(fixNewEntryIds(encodedService.readEntries(fileName),
+                    new NextEntryId(mongoService)));
+            return ResponseEntity.status(HttpStatus.OK).build();
+        } catch (MongoWriteException we) {
+            String msg = duplicateMsg(we);
+            ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, msg);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        } catch (Exception e) {
+            logger.error("Failed to import binary - unexpected error", e);
+            ErrorResponse errorResponse = new ErrorResponse(DATABASE_ERROR, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
     private List<Entry> fixNewEntryIds(List<Entry> newEntries, NextEntryId nextEntryId) {
         return newEntries.stream()
                 .map(entry -> new Entry(nextEntryId.next(), entry.person(), entry.address(), entry.notes()))
@@ -229,6 +275,10 @@ public class AddressApi {
     }
 
     private ResponseEntity<?> fileNameCheck(String fileName, boolean mustExist) {
+        return fileNameCheck(fileName, null, mustExist);
+    }
+
+    private ResponseEntity<?> fileNameCheck(String fileName, String extension, boolean mustExist) {
         if (fileName.startsWith("/")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Invalid File Name", "File name cannot begin with /"));
@@ -237,9 +287,13 @@ public class AddressApi {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Invalid File Name", "File name cannot contain :"));
         }
-        if (!fileName.endsWith(".json")) {
+        if (extension == null && !fileName.endsWith(".json")) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ErrorResponse("Invalid File Name", "File name must end with .json"));
+        }
+        if (extension != null && !fileName.endsWith(extension)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Invalid File Name", "File name must end with " + extension));
         }
         if (mustExist && !(new File(fileName).canRead())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

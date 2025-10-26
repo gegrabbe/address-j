@@ -165,8 +165,18 @@ class AddressApplicationTests {
 
     @Test
     void testImportData() {
-        ResponseEntity<?> response = api.importData("unit-test-import-data.json");
+        // First export data to JSON format to create the test file
+        String exportFile = "unit-test-export-data-for-import.json";
+        ResponseEntity<?> exportResponse = api.export(exportFile);
+        assertEquals(HttpStatus.OK, exportResponse.getStatusCode());
+
+        // Now test importing from the JSON file
+        ResponseEntity<?> response = api.importData(exportFile);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        // Clean up - delete the test file
+        File testFile = new File(exportFile);
+        assertTrue(testFile.delete(), "Failed to delete test JSON file");
     }
 
     @Test
@@ -181,6 +191,36 @@ class AddressApplicationTests {
 
         // Clean up - delete the test export file
         assertTrue(exportedFile.delete(), "Failed to delete test export file");
+    }
+
+    @Test
+    void testExportBinary() {
+        String fileName = "unit-test-export-data.addr";
+        ResponseEntity<?> response = api.exportBinary(fileName);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        // Verify the file was created
+        File exportedFile = new File(fileName);
+        assertTrue(exportedFile.exists(), "Exported binary file should exist");
+
+        // Clean up - delete the test export file
+        assertTrue(exportedFile.delete(), "Failed to delete test export binary file");
+    }
+
+    @Test
+    void testImportBinary() {
+        // First export data to binary format to create the test file
+        String exportFile = "unit-test-export-data-for-import.addr";
+        ResponseEntity<?> exportResponse = api.exportBinary(exportFile);
+        assertEquals(HttpStatus.OK, exportResponse.getStatusCode());
+
+        // Now test importing from the binary file
+        ResponseEntity<?> response = api.importBinary(exportFile);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        // Clean up - delete the test file
+        File testFile = new File(exportFile);
+        assertTrue(testFile.delete(), "Failed to delete test binary file");
     }
 
 }

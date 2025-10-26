@@ -615,6 +615,102 @@ function importEntries() {
     });
 }
 
+// Export entries to binary file
+function exportBinary() {
+    const fileName = prompt('Enter filename for binary export:', 'export-data.addr');
+
+    // User cancelled the prompt
+    if (fileName === null) {
+        return;
+    }
+
+    // Trim and validate
+    const trimmedFileName = fileName.trim();
+    if (trimmedFileName === '') {
+        showMessage('Filename cannot be empty', 'error');
+        return;
+    }
+
+    // Check if filename starts with /
+    if (trimmedFileName.startsWith('/')) {
+        showMessage('Filename cannot begin with /', 'error');
+        return;
+    }
+
+    // Check if filename contains :
+    if (trimmedFileName.includes(':')) {
+        showMessage('Filename cannot contain :', 'error');
+        return;
+    }
+
+    // Check if filename ends with .addr
+    if (!trimmedFileName.endsWith('.addr')) {
+        showMessage('Filename must end with .addr', 'error');
+        return;
+    }
+
+    $.ajax({
+        url: `${API_BASE_URL}/exportBinary?fileName=${encodeURIComponent(trimmedFileName)}`,
+        method: 'POST',
+        success: function() {
+            showMessage(`Entries exported successfully to ${trimmedFileName}`, 'success');
+        },
+        error: function(xhr, status, error) {
+            const errorMsg = getErrorMessage(xhr, 'Error exporting entries: ' + error);
+            showMessage(errorMsg, 'error');
+        }
+    });
+}
+
+// Import entries from binary file
+function importBinary() {
+    const fileName = prompt('Enter filename for binary import:', 'import-data.addr');
+
+    // User cancelled the prompt
+    if (fileName === null) {
+        return;
+    }
+
+    // Trim and validate
+    const trimmedFileName = fileName.trim();
+    if (trimmedFileName === '') {
+        showMessage('Filename cannot be empty', 'error');
+        return;
+    }
+
+    // Check if filename starts with /
+    if (trimmedFileName.startsWith('/')) {
+        showMessage('Filename cannot begin with /', 'error');
+        return;
+    }
+
+    // Check if filename contains :
+    if (trimmedFileName.includes(':')) {
+        showMessage('Filename cannot contain :', 'error');
+        return;
+    }
+
+    // Check if filename ends with .addr
+    if (!trimmedFileName.endsWith('.addr')) {
+        showMessage('Filename must end with .addr', 'error');
+        return;
+    }
+
+    $.ajax({
+        url: `${API_BASE_URL}/importBinary?fileName=${encodeURIComponent(trimmedFileName)}`,
+        method: 'POST',
+        success: function() {
+            showMessage(`Entries imported successfully from ${trimmedFileName}`, 'success');
+            // Reload all entries to show the imported data
+            loadAllEntries(false);
+        },
+        error: function(xhr, status, error) {
+            const errorMsg = getErrorMessage(xhr, 'Error importing entries: ' + error);
+            showMessage(errorMsg, 'error');
+        }
+    });
+}
+
 $(document).ready(function() {
 
     // Button click handlers
@@ -636,6 +732,14 @@ $(document).ready(function() {
 
     $('#importBtn').click(function() {
         importEntries();
+    });
+
+    $('#exportBinaryBtn').click(function() {
+        exportBinary();
+    });
+
+    $('#importBinaryBtn').click(function() {
+        importBinary();
     });
 
     $('#cancelAddBtn').click(function() {
