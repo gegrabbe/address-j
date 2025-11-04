@@ -34,3 +34,8 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.named('bootJar') {
+	mainClass = 'com.glenn.address.AddressApplication'
+	archiveFileName = 'address-executable.jar'
+}

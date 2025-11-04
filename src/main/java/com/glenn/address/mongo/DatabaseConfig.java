@@ -2,47 +2,41 @@ package com.glenn.address.mongo;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 /**
- * Manages MongoDB connection configuration loaded from database.properties file.
+ * Manages MongoDB connection configuration loaded from application.properties.
  * Provides access to MongoDB host, port, database name, and collection name settings.
- * Configuration values have sensible defaults if not specified in the properties file.
+ * Configuration values are injected from Spring application properties.
  */
+@Component
+@ConfigurationProperties(prefix = "spring.data.mongodb")
 public class DatabaseConfig {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseConfig.class);
-    private static final String PROPERTIES_FILE = "database.properties";
 
-    private final String host;
-    private final int port;
-    private final String database;
-    private final String collection;
+    private String host = "localhost";
+    private int port = 27017;
+    private String database = "mongo1j";
+    private String collection = "entries";
 
     public DatabaseConfig() {
-        Properties props = new Properties();
+    }
 
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream(PROPERTIES_FILE)) {
-            if (input == null) {
-                logger.error("Unable to find {}", PROPERTIES_FILE);
-                throw new RuntimeException("Unable to find " + PROPERTIES_FILE);
-            }
+    public void setHost(String host) {
+        this.host = host;
+    }
 
-            props.load(input);
+    public void setPort(int port) {
+        this.port = port;
+    }
 
-            this.host = props.getProperty("mongodb.host", "localhost");
-            this.port = Integer.parseInt(props.getProperty("mongodb.port", "27017"));
-            this.database = props.getProperty("mongodb.database", "mongo1j");
-            this.collection = props.getProperty("mongodb.collection", "entries");
+    public void setDatabase(String database) {
+        this.database = database;
+    }
 
-            logger.info("Database configuration loaded: host={}, port={}, database={}, collection={}",
-                       host, port, database, collection);
-        } catch (IOException e) {
-            logger.error("Failed to load database configuration", e);
-            throw new RuntimeException("Failed to load database configuration", e);
-        }
+    public void setCollection(String collection) {
+        this.collection = collection;
     }
 
     public String getHost() {

@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: address
+  data:
+    mongodb:
+      host: 172.27.16.1  # ip route | grep default
+      port: 27017
+      database: mongo1j
+      collection: entries
+
+logging:
+  level:
+    com.glenn.address: debug
